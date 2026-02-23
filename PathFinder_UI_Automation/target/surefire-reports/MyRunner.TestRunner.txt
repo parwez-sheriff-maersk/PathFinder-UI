@@ -1,0 +1,7 @@
+-------------------------------------------------------------------------------
+Test set: MyRunner.TestRunner
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 1.728 s <<< FAILURE! - in MyRunner.TestRunner
+Validate Transaction ID statuses and error message for a specific partner(Transaction ID status and error message validation  in Pathfinder)  Time elapsed: 0.188 s  <<< ERROR!
+java.lang.IllegalStateException: WebDriver is not initialized!
+
