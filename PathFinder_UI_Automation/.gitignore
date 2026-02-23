@@ -1,0 +1,19 @@
+# Maven
+target/
+dependency-reduced-pom.xml
+
+# Compiled files
+*.class
+
+# Eclipse
+.settings/
+.project
+.classpath
+bin/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

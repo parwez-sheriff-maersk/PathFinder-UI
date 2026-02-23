@@ -1,7 +1,0 @@
-utils\TestContext.class
-utils\BaseTest.class
-stepDefinitions\TransactionIDstatusanderrormessagevalidation.class
-utils\Login.class
-MyRunner\TestRunner.class
-utils\Hooks.class
-utils\WaitUtils.class
