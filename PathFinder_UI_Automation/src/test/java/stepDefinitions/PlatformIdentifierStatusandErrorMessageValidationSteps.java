@@ -1,6 +1,6 @@
 package stepDefinitions;
 
-import Pages.PlatformIdentifierStatusandErrorMessageValidation;
+import Pages.PlatformIdentifierStatusErrorandTerminatedMessageValidation;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.WebDriver;
 
@@ -40,8 +40,8 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
         WebDriver driver = getDriver();
         Properties props = getProperties();
 
-        PlatformIdentifierStatusandErrorMessageValidation platformPage =
-                new PlatformIdentifierStatusandErrorMessageValidation(driver);
+        PlatformIdentifierStatusErrorandTerminatedMessageValidation platformPage =
+                new PlatformIdentifierStatusErrorandTerminatedMessageValidation(driver);
 
         StatusValidation statusValidation =
                 new StatusValidation(driver);

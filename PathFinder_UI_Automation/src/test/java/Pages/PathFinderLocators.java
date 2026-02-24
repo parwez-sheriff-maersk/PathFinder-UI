@@ -107,4 +107,11 @@ public final class PathFinderLocators {
 
  public static final String STATUS_CELL_DEEP =
          "td[data-header-id='status']";
+
+
+public static final By TRANSACTION_IDENTIFIER_HOST =
+      By.cssSelector("mc-input[title*='Transaction']");
+
+public static final By TRANSACTION_IDENTIFIER_INPUT =
+      By.cssSelector("input");
 }

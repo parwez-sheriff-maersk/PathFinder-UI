@@ -14,15 +14,15 @@ import utils.ShadowDom;
 import utils.ExpandDownArrows;
 import utils.InputClearFeild;
 
-public class PlatformIdentifierStatusandErrorMessageValidation {
+public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
     private final WebDriver driver;
     private final WebDriverWait wait;
 
     private static final Logger logger =
-            Logger.getLogger(PlatformIdentifierStatusandErrorMessageValidation.class.getName());
+            Logger.getLogger(PlatformIdentifierStatusErrorandTerminatedMessageValidation.class.getName());
 
-    public PlatformIdentifierStatusandErrorMessageValidation(WebDriver driver) {
+    public PlatformIdentifierStatusErrorandTerminatedMessageValidation(WebDriver driver) {
         this.driver = driver;
         this.wait   = new WebDriverWait(driver, Duration.ofSeconds(30));
     }
