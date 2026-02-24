@@ -11,6 +11,8 @@ import org.openqa.selenium.support.ui.*;
 
 import utils.ColorUtils;
 import utils.ShadowDom;
+import utils.ExpandDownArrows;
+import utils.InputClearFeild;
 
 public class PlatformIdentifierStatusandErrorMessageValidation {
 
@@ -32,8 +34,7 @@ public class PlatformIdentifierStatusandErrorMessageValidation {
     public void clickTraceTableTab() {
 
         WebElement traceTab = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//span[text()='Trace Table']")));
+                ExpectedConditions.elementToBeClickable(TRACE_TABLE_TAB));
 
         traceTab.click();
 
@@ -42,7 +43,7 @@ public class PlatformIdentifierStatusandErrorMessageValidation {
     }
 
     // ============================================================
-    // FIRST SEARCH
+    // SEARCH
     // ============================================================
 
     public void enterPlatformIdentifierAndSearch(String platformId) {
@@ -51,7 +52,7 @@ public class PlatformIdentifierStatusandErrorMessageValidation {
 
         WebElement input = findPlatformInputByLabel(20);
 
-        safeFocusAndClear(input);
+        InputClearFeild.safeClearAndFocus(driver, input);
 
         input.sendKeys(platformId);
         input.sendKeys(Keys.TAB);
@@ -59,44 +60,18 @@ public class PlatformIdentifierStatusandErrorMessageValidation {
         clickSearchButton();
     }
 
-    // ============================================================
-    // UPDATE SEARCH (FIXED VERSION)
-    // ============================================================
-
     public void updatePlatformIdentifierAndSearch(String newPlatformId) {
 
         logger.info("[UPDATE SEARCH] Platform ID = " + newPlatformId);
 
         WebElement input = findPlatformInputByLabel(20);
 
-        safeFocusAndClear(input);
+        InputClearFeild.safeClearAndFocus(driver, input);
 
         input.sendKeys(newPlatformId);
         input.sendKeys(Keys.TAB);
 
         clickSearchButton();
-    }
-
-    // ============================================================
-    // SAFE FOCUS + CLEAR (FIX FOR CLICK INTERCEPTION)
-    // ============================================================
-
-    private void safeFocusAndClear(WebElement input) {
-
-        // Scroll into center so header doesn't overlap
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center'});", input);
-
-        // Use JS focus (not click)
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].focus();", input);
-
-        // Clear via JS (more stable)
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].value=''; arguments[0].dispatchEvent(new Event('input',{bubbles:true}));",
-                input);
-
-        try { Thread.sleep(500); } catch (InterruptedException ignored) {}
     }
 
     // ============================================================
@@ -155,333 +130,109 @@ public class PlatformIdentifierStatusandErrorMessageValidation {
 
     private WebElement locateTransactionIdBadge() {
         return ShadowDom.findFirstVisibleDeep(
-                driver, "span.trace-badge,.trace-badge,.badge", 6, logger);
+                driver, GENERIC_BADGE_DEEP, 6, logger);
     }
 
     public boolean isTransactionIdBadgeOrange() {
+
         WebElement badge = locateTransactionIdBadge();
         if (badge == null) return false;
 
         String color = ShadowDom.getComputedStyle(driver, badge, "background-color");
-        logger.info("ORANGE badge CSS color = " + color);
+        logger.info("🟠 ORANGE badge CSS color = " + color);
 
         return ColorUtils.isOrangeCss(color);
     }
 
     public boolean isTransactionIdRed() {
+
         WebElement badge = locateTransactionIdBadge();
         if (badge == null) return false;
 
         String color = ShadowDom.getComputedStyle(driver, badge, "background-color");
-        logger.info("RED badge CSS color = " + color);
+        logger.info("🔴 RED badge CSS color = " + color);
 
-        int[] rgb = ColorUtils.parseRgb(color);
-        if (rgb == null) return false;
+        return ColorUtils.isRedCss(color);
+    }
 
-        int r = rgb[0];
-        int g = rgb[1];
-        int b = rgb[2];
+    public boolean isTransactionIdBadgeGreen() {
 
-        return (r > 200 && g < 220 && b < 220);
+        WebElement badge = locateTransactionIdBadge();
+        if (badge == null) return false;
+
+        String color = ShadowDom.getComputedStyle(driver, badge, "background-color");
+        logger.info("🟢 GREEN badge CSS color = " + color);
+
+        return ColorUtils.isGreenCss(color);
     }
 
     // ============================================================
-    // EXPAND
+    // COMMON STATUS CAPTURE
     // ============================================================
 
-    private void expandRow() {
+    private String captureExpandedStatus() {
 
-        WebElement btn = ShadowDom.findFirstVisibleDeep(
-                driver,
-                "button[aria-label='Expand row']",
-                10,
-                logger);
+        List<WebElement> statusCells =
+                ShadowDom.findAllDeep(
+                        driver,
+                        STATUS_CELL_DEEP,
+                        logger);
 
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center'});", btn);
+        for (WebElement cell : statusCells) {
+            try {
+                String text = cell.getText().trim();
+                if (!text.isEmpty()) {
+                    logger.info("Status Found: " + text);
+                    return text.toUpperCase();
+                }
+            } catch (Exception ignored) {}
+        }
 
-        btn.click();
-
-        try { Thread.sleep(800); } catch (InterruptedException ignored) {}
+        throw new AssertionError("Status not found after expansion");
     }
 
-    private String captureStatus() {
+    // ============================================================
+    // FLOWS
+    // ============================================================
 
-        WebElement statusCell = ShadowDom.findFirstVisibleDeep(
-                driver,
-                "td[data-header-id='status']",
-                10,
-                logger);
-
-        if (statusCell == null) return "UNKNOWN";
-
-        return statusCell.getText().trim().toUpperCase();
-    }
-
-    public String processOrangeFlow() {
+    public String processOrangeFlow() throws InterruptedException {
 
         if (!isTransactionIdBadgeOrange())
             throw new AssertionError("Txn not orange");
 
-        expandRow();
-        expandRow();
+        ExpandDownArrows expander = new ExpandDownArrows(driver);
+        expander.expandToFinalLevel();
 
-        return captureStatus();
+        return captureExpandedStatus();
     }
 
     public String processRedFlow() throws InterruptedException {
 
-        logger.info("===== RED Flow Validation Started =====");
-
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(40));
-
-        // 1️⃣ Wait for RED badge
         wait.until(d -> isTransactionIdRed());
-        logger.info("✅ RED badge confirmed");
 
-        // 2️⃣ Click first expand arrow
-        WebElement firstExpand = ShadowDom.findFirstVisibleDeep(
-                driver,
-                "button[aria-label='Expand row']",
-                10,
-                logger
-        );
-        firstExpand.click();
-        Thread.sleep(1000);
+        ExpandDownArrows expander = new ExpandDownArrows(driver);
+        expander.expandToFinalLevel();
 
-        // 3️⃣ Click second expand arrow
-        WebElement secondExpand = ShadowDom.findFirstVisibleDeep(
-                driver,
-                "button[aria-label='Expand row']",
-                10,
-                logger
-        );
-        secondExpand.click();
-        logger.info("✅ Two levels expanded");
-
-        // 4️⃣ Now wait for STATUS inside expanded row
-        WebElement statusCell = wait.until(d ->
-                ShadowDom.findFirstVisibleDeep(
-                        driver,
-                        "td[data-header-id='status']",
-                        5,
-                        logger
-                )
-        );
-
-        String status = statusCell.getText().trim();
-
-        logger.info("🔎 Status after expanding 2 arrows: " + status);
-
-        return status;
-    }
-    public void clickThirdExpandArrow() {
-
-        logger.info("===== Clicking 3rd Down Arrow =====");
-
-        List<WebElement> expandButtons =
-                ShadowDom.findAllDeep(
-                        driver,
-                        "button[aria-label='Expand row']",
-                        logger
-                );
-
-        if (expandButtons == null || expandButtons.size() < 3) {
-            throw new RuntimeException("Less than 3 expand arrows found!");
-        }
-
-        WebElement thirdArrow = expandButtons.get(2);
-
-        ShadowDom.scrollIntoViewCenter(driver, thirdArrow);
-        ShadowDom.jsClick(driver, thirdArrow);
-
-        logger.info("✅ 3rd down arrow clicked successfully");
+        return captureExpandedStatus();
     }
 
+    public String processGreenFlow() throws InterruptedException {
 
+        wait.until(d -> locateTransactionIdBadge() != null);
 
-    public void validateErrorStatusAfterThirdExpand() {
+        ExpandDownArrows expander = new ExpandDownArrows(driver);
+        expander.expandToFinalLevel();
 
-        logger.info("===== Validating ERROR Status After 3rd Expand =====");
-
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-
-        // Wait until status cells are present
-        wait.until(d ->
-                ShadowDom.findAllDeep(
-                        driver,
-                        "td[data-header-id='status']",
-                        logger
-                ).size() > 0
-        );
-
-        List<WebElement> statusCells = ShadowDom.findAllDeep(
-                driver,
-                "td[data-header-id='status']",
-                logger
-        );
-
-        boolean errorFound = false;
-
-        for (WebElement cell : statusCells) {
-
-            String text = cell.getText().trim();
-            logger.info("Status found: " + text);
-
-            if (text.equalsIgnoreCase("ERROR")) {
-                errorFound = true;
-                break;
-            }
-        }
-
-        if (!errorFound) {
-            throw new AssertionError("ERROR status not found after 3rd expand");
-        }
-
-        logger.info("✅ ERROR status validation PASSED.");
+        return captureExpandedStatus();
     }
- // ============================================================
- // 🟢 GREEN FLOW (MATCHING RED LOGIC)
- // ============================================================
 
- public String processGreenFlow(String greenPlatformId) throws InterruptedException {
+    // ============================================================
+    // ERROR LEVEL EXPANSION (ONLY 3rd LEVEL)
+    // ============================================================
 
-     logger.info("=================================================");
-     logger.info("🟢 ===== GREEN Badge Flow Validation Started =====");
-     logger.info("=================================================");
+    public void expandToErrorLevel() throws InterruptedException {
 
-     WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(40));
-
-     // 1️⃣ Clear + Enter + Search
-     logger.info("🔄 Updating Platform ID for GREEN flow: " + greenPlatformId);
-     updatePlatformIdentifierAndSearch(greenPlatformId);
-
-     // 2️⃣ Wait for GREEN badge (same style as RED wait)
-     logger.info("⏳ Waiting for GREEN badge...");
-     wait.until(d -> isTransactionIdBadgeGreen());
-     logger.info("✅ GREEN badge confirmed");
-
-     // 3️⃣ Expand first arrow
-     logger.info("⬇ Expanding first level...");
-     expandArrowByIndex(0);
-     Thread.sleep(1000);
-
-     // 4️⃣ Expand second arrow
-     logger.info("⬇ Expanding second level...");
-     expandArrowByIndex(1);
-     logger.info("✅ Two levels expanded");
-
-     // 5️⃣ Capture status EXACTLY like RED flow
-     WebElement statusCell = wait.until(d ->
-             ShadowDom.findFirstVisibleDeep(
-                     driver,
-                     "td[data-header-id='status']",
-                     5,
-                     logger
-             )
-     );
-
-     String status = statusCell.getText().trim().toUpperCase();
-
-     logger.info("🔎 Status after expanding 2 arrows (GREEN): " + status);
-
-     logger.info("=================================================");
-     logger.info("🟢 ===== GREEN Flow Validation Completed =====");
-     logger.info("=================================================");
-
-     return status;
- }
-//============================================================
-//COMMON EXPAND METHOD (VISIBLE SAFE VERSION)
-//============================================================
-
-private void expandArrowByIndex(int index) {
-
-  List<WebElement> allArrows =
-          ShadowDom.findAllDeep(
-                  driver,
-                  "button[aria-label='Expand row']",
-                  logger);
-
-  if (allArrows == null || allArrows.isEmpty()) {
-      throw new RuntimeException("❌ No expand arrows found on page!");
-  }
-
-  // Filter only visible arrows
-  List<WebElement> visibleArrows = new java.util.ArrayList<>();
-
-  for (WebElement arrow : allArrows) {
-      try {
-          if (arrow.isDisplayed()) {
-              visibleArrows.add(arrow);
-          }
-      } catch (Exception ignored) {}
-  }
-
-  logger.info("🔎 Total expand arrows found: " + allArrows.size());
-  logger.info("👀 Visible expand arrows: " + visibleArrows.size());
-
-  if (visibleArrows.size() <= index) {
-      throw new RuntimeException(
-              "❌ Not enough visible expand arrows! Required index: " + index
-      );
-  }
-
-  WebElement arrowToClick = visibleArrows.get(index);
-
-  ShadowDom.scrollIntoViewCenter(driver, arrowToClick);
-  ShadowDom.jsClick(driver, arrowToClick);
-
-  logger.info("🔽 Visible expand arrow index " + index + " clicked successfully.");
+        ExpandDownArrows expander = new ExpandDownArrows(driver);
+        expander.expandOnlyThirdLevel();
+    }
 }
-//============================================================
-//🟢 GREEN BADGE DETECTION (IMPROVED)
-//============================================================
-
-public boolean isTransactionIdBadgeGreen() {
-
- WebElement badge =
-         ShadowDom.findFirstVisibleDeep(
-                 driver,
-                 "span.trace-badge,.trace-badge,.badge",
-                 10,
-                 logger);
-
- if (badge == null) {
-     logger.warning("❌ No badge element found for GREEN detection.");
-     return false;
- }
-
- String color =
-         ShadowDom.getComputedStyle(driver, badge, "background-color");
-
- logger.info("🟢 GREEN badge CSS color detected: " + color);
-
- int[] rgb = ColorUtils.parseRgb(color);
-
- if (rgb == null) {
-     logger.warning("❌ Unable to parse GREEN badge RGB value.");
-     return false;
- }
-
- int r = rgb[0];
- int g = rgb[1];
- int b = rgb[2];
-
- logger.info("🟢 Parsed RGB -> R: " + r + " G: " + g + " B: " + b);
-
- 
-
- boolean isGreen =
-         (g > 200) &&
-         (r >= 150 && r <= 220) &&
-         (b >= 150 && b <= 220);
-
- if (isGreen) {
-     logger.info("✅ GREEN badge validation PASSED.");
- } else {
-     logger.warning("❌ GREEN badge validation FAILED.");
- }
-
- return isGreen;
-}}

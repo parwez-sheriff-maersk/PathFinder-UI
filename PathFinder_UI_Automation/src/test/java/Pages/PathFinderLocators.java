@@ -33,9 +33,7 @@ public final class PathFinderLocators {
     public static final By INNER_ANY_INPUT     = By.cssSelector("input");
     public static final By DATE_PICKER_BUTTON  = By.cssSelector("button[aria-label='Open']");
 
-    // =========================
-    // Table / Status badge (generic)
-    // =========================
+    
     public static final By TRACE_TABLE_HOST       = By.cssSelector("mds-table[aria-label='Trace transactions table']");
     public static final By STATUS_BADGE_IN_SHADOW = By.cssSelector("tbody td span.trace-badge");
     public static final By TRACE_TABLE_HOST_ANY   = By.cssSelector("mds-table, mds-data-table");
@@ -43,9 +41,6 @@ public final class PathFinderLocators {
         "tbody td span.trace-badge, tbody td .trace-badge, tbody td mds-badge, tbody td .badge"
     );
 
-    // =========================
-    // Transaction ID badge (top panel)
-    // =========================
     public static final By TRANSACTION_ID_BADGE = By.cssSelector(
         ".transaction-id-section span.trace-badge, " +
         "[aria-label='Transaction ID'] span.trace-badge"
@@ -64,11 +59,7 @@ public final class PathFinderLocators {
         ".trace-badge[aria-label*='Transaction'], .badge[aria-label*='Transaction']"
     );
 
-    // =========================
-    // Row expanders (chevrons)
-    // =========================
-
-    // Host mc-button for the row expander (DO NOT put aria-label on host; it's on the inner <button>)
+    
     public static final By PLATFORM_ROW_EXPANDER_HOST =
             By.cssSelector("mc-button.mc-table__expanded-row__trigger");
 
@@ -86,25 +77,34 @@ public final class PathFinderLocators {
     public static final By PLATFORM_ROW_EXPANDER_HOST_ALT2 =
             By.cssSelector(".mds-table__column--row-expander mds-button[aria-label='Expand row'], mds-button[aria-label='Expand row']");
 
-    // ===== Deep selectors (strings) for cross-shadow deep scans =====
-
-    // Any inner <button aria-label='Expand row'> (main or nested)
+   
     public static final String ANY_EXPAND_BUTTON_DEEP =
             "mc-button.mc-table__expanded-row__trigger button[aria-label='Expand row'], " +
             ".mds-table__column--row-expander mc-button button[aria-label='Expand row'], " +
             "button[aria-label='Expand row']";
 
-    // The expanded-details container that appears after the main row is expanded
     public static final String EXPANDED_DETAILS_DEEP =
             "div[role='row'] + div[role='rowgroup'], " +  // common grid pattern
             ".mds-table__expanded-row, " +                // generic class if present
             ".mc-table__expanded-row";                    // MC variant if present
 
-    // Inside expanded details, the nested Platform expander button (inner <button>)
+    
     public static final String NESTED_PLATFORM_EXPAND_BUTTON_IN_DETAILS_DEEP =
             "mc-button.mc-table__expanded-row__trigger button[aria-label='Expand row']";
 
-    // Status cell inside the expanded details table rows (data-header-id='status')
+    
     public static final String DETAILS_STATUS_CELL_DEEP =
             "td[data-header-id='status'], [data-header-id='status']";
+
+ public static final By TRACE_TABLE_TAB =
+         By.xpath("//span[text()='Trace Table']");
+
+
+ 
+ public static final String GENERIC_BADGE_DEEP =
+         "span.trace-badge, .trace-badge, .badge";
+
+
+ public static final String STATUS_CELL_DEEP =
+         "td[data-header-id='status']";
 }

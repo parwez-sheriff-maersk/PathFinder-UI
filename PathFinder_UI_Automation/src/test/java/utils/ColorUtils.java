@@ -4,10 +4,16 @@ public class ColorUtils {
 
     private ColorUtils() {}
 
+    // ============================================================
+    // RGB PARSER (Supports rgb + rgba)
+    // ============================================================
+
     public static int[] parseRgb(String cssColor) {
+
         if (cssColor == null) return null;
 
         String cleaned = cssColor.trim().toLowerCase();
+
         if (!(cleaned.startsWith("rgb(") || cleaned.startsWith("rgba(")))
             return null;
 
@@ -17,6 +23,7 @@ public class ColorUtils {
                          .trim();
 
         String[] parts = cleaned.split(",");
+
         if (parts.length < 3) return null;
 
         try {
@@ -29,7 +36,10 @@ public class ColorUtils {
         }
     }
 
-    // 🔶 ORANGE detection (your working one)
+    // ============================================================
+    // ORANGE
+    // ============================================================
+
     public static boolean isOrangeCss(String cssColor) {
 
         int[] rgb = parseRgb(cssColor);
@@ -39,11 +49,14 @@ public class ColorUtils {
         int g = rgb[1];
         int b = rgb[2];
 
-        // Your UI orange = rgb(255, 220, 166)
-        return (r >= 240 && g >= 200 && b <= 180);
+        // Example: rgb(255, 220, 166)
+        return (r >= 230 && g >= 180 && b <= 190);
     }
 
-    // 🔴 FIXED RED detection (ONLY change we made)
+    // ============================================================
+    // RED
+    // ============================================================
+
     public static boolean isRedCss(String cssColor) {
 
         int[] rgb = parseRgb(cssColor);
@@ -53,7 +66,24 @@ public class ColorUtils {
         int g = rgb[1];
         int b = rgb[2];
 
-        // Your UI red = rgb(255, 200, 200)
-        return (r >= 240 && g >= 180 && b >= 180);
+        // Strong red dominance
+        return (r >= 230 && g <= 210 && b <= 210);
+    }
+
+    // ============================================================
+    // GREEN
+    // ============================================================
+
+    public static boolean isGreenCss(String cssColor) {
+
+        int[] rgb = parseRgb(cssColor);
+        if (rgb == null) return false;
+
+        int r = rgb[0];
+        int g = rgb[1];
+        int b = rgb[2];
+
+        // Example UI: rgb(191, 249, 199)
+        return (g >= 220 && r <= 210 && b <= 210);
     }
 }

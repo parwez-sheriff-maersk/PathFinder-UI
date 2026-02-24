@@ -2,13 +2,13 @@ package stepDefinitions;
 
 import Pages.PlatformIdentifierStatusandErrorMessageValidation;
 import io.cucumber.java.en.Then;
-import org.junit.Assert;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Properties;
 import java.util.logging.Logger;
 
 import utils.TestContext;
+import utils.StatusValidation;
 
 public class PlatformIdentifierStatusandErrorMessageValidationSteps {
 
@@ -17,13 +17,11 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
 
     private final TestContext context;
 
-    // ✅ Constructor only stores context
     public PlatformIdentifierStatusandErrorMessageValidationSteps(TestContext context) {
         this.context = context;
         logger.info("🧭 PlatformIdentifier Steps initialized");
     }
 
-    // ✅ Always fetch driver AFTER Hooks initializes it
     private WebDriver getDriver() {
         WebDriver driver = context.getDriver();
         if (driver == null) {
@@ -40,9 +38,18 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
     public void user_validates_platform_identifier() throws InterruptedException {
 
         WebDriver driver = getDriver();
+        Properties props = getProperties();
 
         PlatformIdentifierStatusandErrorMessageValidation platformPage =
                 new PlatformIdentifierStatusandErrorMessageValidation(driver);
+
+        StatusValidation statusValidation =
+                new StatusValidation(driver);
+
+        // 🔥 Read platform IDs from config
+        String orangePlatformId = props.getProperty("ORANGE_PLATFORM_ID");
+        String redPlatformId    = props.getProperty("RED_PLATFORM_ID");
+        String greenPlatformId  = props.getProperty("GREEN_PLATFORM_ID");
 
         logger.info("================================================================");
         logger.info("🚀 ===== Platform Identifier End-to-End Validation Started =====");
@@ -52,17 +59,13 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
         // 🟠 ORANGE FLOW
         // ============================================================
 
-        String firstPlatformId = "150000000040167219.0001.0001";
-
         logger.info("🟠 STEP 1: ORANGE Flow Validation Started");
 
         platformPage.clickTraceTableTab();
-        platformPage.enterPlatformIdentifierAndSearch(firstPlatformId);
+        platformPage.enterPlatformIdentifierAndSearch(orangePlatformId);
 
-        String orangeStatus = platformPage.processOrangeFlow();
-
-        logger.info("📌 ORANGE Flow - Captured Status : " + orangeStatus);
-        Assert.assertEquals("TERMINATED", orangeStatus);
+        platformPage.processOrangeFlow();
+        statusValidation.validateTerminatedStatus();
 
         logger.info("✅ ORANGE Flow PASSED Successfully");
 
@@ -70,27 +73,23 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
         // 🔴 RED FLOW
         // ============================================================
 
-        String redPlatformId = "150000000040279748";
-
         logger.info("🔴 STEP 2: RED Flow Validation Started");
 
         platformPage.updatePlatformIdentifierAndSearch(redPlatformId);
 
-        String redStatus = platformPage.processRedFlow();
-
-        logger.info("📌 RED Flow - Captured Status : " + redStatus);
-        Assert.assertEquals("SUCCESS", redStatus);
+        platformPage.processRedFlow();
+        statusValidation.validateSuccessStatus();
 
         logger.info("✅ RED Flow PASSED Successfully");
 
         // ============================================================
-        // ⬇ THIRD EXPAND (ERROR VALIDATION)
+        // 🔴 ERROR (3rd Level Expansion)
         // ============================================================
 
-        logger.info("⬇ STEP 3: Third Expand & ERROR Validation");
+        logger.info("⬇ STEP 3: ERROR Validation");
 
-        platformPage.clickThirdExpandArrow();
-        platformPage.validateErrorStatusAfterThirdExpand();
+        platformPage.expandToErrorLevel();
+        statusValidation.validateErrorStatus();
 
         logger.info("✅ ERROR Status Validated Successfully");
 
@@ -98,14 +97,12 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
         // 🟢 GREEN FLOW
         // ============================================================
 
-        String greenPlatformId = "499433176945202401";
-
         logger.info("🟢 STEP 4: GREEN Flow Validation Started");
 
-        String greenStatus = platformPage.processGreenFlow(greenPlatformId);
+        platformPage.updatePlatformIdentifierAndSearch(greenPlatformId);
 
-        logger.info("📌 GREEN Flow - Captured Status : " + greenStatus);
-        Assert.assertEquals("SUCCESS", greenStatus);
+        platformPage.processGreenFlow();
+        statusValidation.validateSuccessStatus();
 
         logger.info("✅ GREEN Flow PASSED Successfully");
 
