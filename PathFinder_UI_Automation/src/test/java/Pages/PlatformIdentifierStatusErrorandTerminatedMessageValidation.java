@@ -134,6 +134,39 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
     // ============================================================
 
     public void expandAndValidateSeeburger(String expectedStatus) throws InterruptedException {
+    	
+    	// 🔽 Scroll to SEEBURGER row before expansion
+    	logger.info("🔽 Scrolling to SEEBURGER row before expansion...");
+
+    	try {
+
+    	    List<WebElement> platforms = ShadowDom.findAllDeep(
+    	            driver,
+    	            "td[data-header-id='systemName'] span.system-name",
+    	            logger
+    	    );
+
+    	    for (WebElement p : platforms) {
+
+    	        if (p.isDisplayed() &&
+    	            p.getText().trim().equalsIgnoreCase("SEEBURGER")) {
+
+    	            ((JavascriptExecutor) driver)
+    	                    .executeScript(
+    	                        "arguments[0].scrollIntoView({block:'center'});",
+    	                        p
+    	                    );
+
+    	            Thread.sleep(1000);
+
+    	            logger.info("✅ Scrolled to SEEBURGER row.");
+    	            break;
+    	        }
+    	    }
+
+    	} catch (Exception e) {
+    	    logger.warning("⚠ Scroll before SEEBURGER expansion failed: " + e.getMessage());
+    	}
 
         logger.info("🟣 ===== PROCESSING SEEBURGER =====");
 
@@ -435,5 +468,39 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
      logger.info("✅ SMART SEEBURGER validation completed.");
  }
+ public void scrollToSeeburgerRow() throws InterruptedException {
+
+	    logger.info("🔽 Preparing to scroll to SEEBURGER row...");
+
+	    List<WebElement> systemCells =
+	            ShadowDom.findAllDeep(driver,
+	                    "td[data-header-id='systemName'] span.system-name",
+	                    logger);
+
+	    boolean found = false;
+
+	    for (WebElement cell : systemCells) {
+
+	        String systemName = cell.getText().trim().toUpperCase();
+
+	        if (systemName.equals("SEEBURGER")) {
+
+	            logger.info("🎯 SEEBURGER row found. Scrolling now...");
+
+	            ((JavascriptExecutor) driver)
+	                    .executeScript("arguments[0].scrollIntoView({block:'center'});", cell);
+
+	            Thread.sleep(3000); // ✅ Wait 3 seconds as you requested
+
+	            logger.info("✅ Scroll completed and waited 3 seconds.");
+	            found = true;
+	            break;
+	        }
+	    }
+
+	    if (!found) {
+	        logger.warning("⚠ SEEBURGER row not found for scrolling.");
+	    }
+	}
 
 }

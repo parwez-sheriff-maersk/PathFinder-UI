@@ -8,8 +8,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import utils.TestContext;
 import utils.DatabaseUtils;
@@ -47,16 +50,13 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
 
         logger.info("🚀 ===== DB vs UI Platform Identifier Validation Started =====");
 
-        // Wait until dashboard is ready
         wait.until(ExpectedConditions.elementToBeClickable(
                 PathFinderLocators.TRACE_TABLE_TAB));
 
         logger.info("✅ Dashboard Loaded");
 
-        // Open Trace Table
         platformPage.clickTraceTableTab();
 
-        // Fetch latest records from DB
         List<PlatformRecord> records =
                 DatabaseUtils.getLatestPlatformIdentifiers(context.getProperties());
 
@@ -66,53 +66,108 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
 
         logger.info("📊 Total Records From DB: " + records.size());
 
-        for (PlatformRecord record : records) {
+        // ============================================================
+        // GROUP DB RECORDS BY PLATFORM ID
+        // ============================================================
 
-            String platformId   = record.getPlatformId();
-            String dbStatus     = record.getDbStatus().toUpperCase();
-            String originSystem = record.getOriginSystem().toUpperCase();
+        Map<String, List<PlatformRecord>> groupedByPlatformId =
+                records.stream()
+                        .collect(Collectors.groupingBy(PlatformRecord::getPlatformId));
 
-            String normalizedDbStatus =
-                    StatusMapper.mapDbToUiStatus(dbStatus, originSystem);
+        for (String platformId : groupedByPlatformId.keySet()) {
+
+            List<PlatformRecord> platformRecords = groupedByPlatformId.get(platformId);
 
             logger.info("==================================================");
-            logger.info("📌 Platform ID            : " + platformId);
-            logger.info("🔵 " + originSystem + " Status (DB)  : " + dbStatus);
-            logger.info("🔄 Normalized DB Status   : " + normalizedDbStatus);
+            logger.info("🎯 VALIDATION START FOR PLATFORM ID: " + platformId);
             logger.info("==================================================");
 
-            // 🔍 SEARCH PLATFORM ID
+            // 🔍 SEARCH ONCE
             platformPage.updatePlatformIdentifierAndSearch(platformId);
 
             logger.info("⏳ Waiting for table refresh...");
             platformPage.waitForExpandArrowsAfterSearch();
             Thread.sleep(2000);
 
-            logger.info("🔎 Expanding system: " + originSystem);
+            // Collect unique systems + expected status
+            Map<String, String> expectedStatuses = new HashMap<>();
 
-            // ============================================================
-            // EXPAND + VALIDATE BASED ON SYSTEM
-            // ============================================================
+            for (PlatformRecord record : platformRecords) {
 
-            if (originSystem.equalsIgnoreCase("AMPS")) {
+                String originSystem = record.getOriginSystem().toUpperCase();
+                String dbStatus     = record.getDbStatus().toUpperCase();
 
-                // ✅ Working method unchanged
-                platformPage.expandAndValidateAmps(normalizedDbStatus);
+                String normalizedDbStatus =
+                        StatusMapper.mapDbToUiStatus(dbStatus, originSystem);
 
-            } else if (originSystem.equalsIgnoreCase("SEEBURGER")) {
+                expectedStatuses.put(originSystem, normalizedDbStatus);
 
-                // ✅ SEEBURGER only needs expectedStatus
-            	platformPage.expandAndValidateSeeburger(normalizedDbStatus);
-                //platformPage.expandAndValidateSeeburger(normalizedDbStatus);
-
-            } else {
-
-                throw new RuntimeException("❌ Unknown origin system: " + originSystem);
+                logger.info("🗄 DB Record -> " + originSystem +
+                        " | Raw DB Status: " + dbStatus +
+                        " | Normalized UI Status: " + normalizedDbStatus);
             }
 
-            logger.info("✅ " + originSystem + " status MATCHED");
+            logger.info("🧭 Systems detected in DB for this Platform ID:");
+
+            for (String system : expectedStatuses.keySet()) {
+                logger.info("   ➤ " + system +
+                        " -> Expected Status: " + expectedStatuses.get(system));
+            }
+
+            logger.info("==================================================");
+
+            // ============================================================
+            // SCENARIO 1: ONLY SEEBURGER
+            // ============================================================
+
+            if (expectedStatuses.size() == 1 &&
+                    expectedStatuses.containsKey("SEEBURGER")) {
+
+                logger.info("🟣 SCENARIO: ONLY SEEBURGER present");
+                logger.info("🟣 Starting SEEBURGER validation...");
+
+                platformPage.expandAndValidateSeeburger(
+                        expectedStatuses.get("SEEBURGER"));
+
+                logger.info("🟣 SEEBURGER validation completed.");
+            }
+
+            // ============================================================
+            // SCENARIO 2: AMPS and/or SEEBURGER
+            // ============================================================
+
+            else {
+
+                if (expectedStatuses.containsKey("AMPS")) {
+
+                    logger.info("🔵 AMPS detected for this Platform ID");
+                    logger.info("🔵 Starting AMPS validation...");
+
+                    platformPage.expandAndValidateAmps(
+                            expectedStatuses.get("AMPS"));
+
+                    logger.info("🔵 AMPS validation completed.");
+
+                    // Scroll before validating SEEBURGER
+                    platformPage.scrollToSeeburgerRow();
+                    Thread.sleep(1500);
+                }
+
+                if (expectedStatuses.containsKey("SEEBURGER")) {
+
+                    logger.info("🟣 SEEBURGER detected for this Platform ID");
+                    logger.info("🟣 Starting SEEBURGER validation...");
+
+                    platformPage.expandAndValidateSeeburger(
+                            expectedStatuses.get("SEEBURGER"));
+
+                    logger.info("🟣 SEEBURGER validation completed.");
+                }
+            }
+
+            logger.info("✅ VALIDATION FINISHED FOR PLATFORM ID: " + platformId);
+            logger.info("==================================================");
         }
 
         logger.info("🎉 ===== ALL PLATFORM IDENTIFIERS VALIDATED SUCCESSFULLY =====");
-    }
-}
+        }}

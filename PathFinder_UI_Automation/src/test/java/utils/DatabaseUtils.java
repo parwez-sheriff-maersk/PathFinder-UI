@@ -60,6 +60,7 @@ public class DatabaseUtils {
                     "FROM path_finder_log " +
                     "WHERE platform_identifier IS NOT NULL " +
                     "AND origin_system = 'SEEBURGER' " +
+                   
                     "ORDER BY log_created_time DESC " +
                     "LIMIT 5";
 
