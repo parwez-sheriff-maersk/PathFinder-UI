@@ -102,7 +102,8 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
             } else if (originSystem.equalsIgnoreCase("SEEBURGER")) {
 
                 // ✅ SEEBURGER only needs expectedStatus
-                platformPage.expandAndValidateSeeburger(normalizedDbStatus);
+            	platformPage.expandAndValidateSeeburger(normalizedDbStatus);
+                //platformPage.expandAndValidateSeeburger(normalizedDbStatus);
 
             } else {
 

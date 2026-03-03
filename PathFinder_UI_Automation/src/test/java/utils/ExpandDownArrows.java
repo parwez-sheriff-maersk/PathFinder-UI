@@ -3,6 +3,7 @@ package utils;
 import static Pages.PathFinderLocators.*;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -206,36 +207,88 @@ public void expandToFinalLevelForSeeburger(String platformName) throws Interrupt
 
 public void expandSeeburgerByIndex() throws InterruptedException {
 
- List<WebElement> arrows =
+    List<WebElement> arrows =
+            ShadowDom.findAllDeep(
+                    driver,
+                    ANY_EXPAND_BUTTON_DEEP,
+                    logger);
+
+    if (arrows == null || arrows.isEmpty()) {
+        throw new RuntimeException("❌ No expand arrows found!");
+    }
+
+    logger.info("⬇ Expanding Level 1 (index 0)");
+
+    WebElement firstArrow = arrows.get(0);
+    ShadowDom.scrollIntoViewCenter(driver, firstArrow);
+    ShadowDom.jsClick(driver, firstArrow);
+
+    Thread.sleep(2000);
+
+    // Re-fetch arrows after Level 1 expansion
+    arrows =
+            ShadowDom.findAllDeep(
+                    driver,
+                    ANY_EXPAND_BUTTON_DEEP,
+                    logger);
+
+    if (arrows.size() == 2) {
+        // 🔹 Single SEEBURGER case
+        logger.info("⬇ Single SEEBURGER detected - Expanding index 1");
+
+        WebElement secondArrow = arrows.get(1);
+        ShadowDom.scrollIntoViewCenter(driver, secondArrow);
+        ShadowDom.jsClick(driver, secondArrow);
+    } 
+    else if (arrows.size() >= 3) {
+        // 🔹 AMPS + SEEBURGER case
+        logger.info("⬇ Multiple platforms detected - Expanding SEEBURGER at index 2");
+
+        WebElement thirdArrow = arrows.get(2);
+        ShadowDom.scrollIntoViewCenter(driver, thirdArrow);
+        ShadowDom.jsClick(driver, thirdArrow);
+    }
+    else {
+        throw new RuntimeException("❌ Unexpected expansion structure!");
+    }
+
+    Thread.sleep(2000);
+
+    logger.info("✅ SEEBURGER expansion completed.");
+}
+
+//============================================================
+//GET AVAILABLE PLATFORMS AFTER LEVEL 1 EXPANSION
+//============================================================
+
+public List<String> getAvailablePlatforms() {
+
+ List<String> platformNames = new ArrayList<>();
+
+ List<WebElement> platformCells =
          ShadowDom.findAllDeep(
                  driver,
-                 ANY_EXPAND_BUTTON_DEEP,
-                 logger);
+                 "td[data-header-id='systemName'] span.system-name",
+                 logger
+         );
 
- if (arrows == null || arrows.size() < 3) {
-     throw new RuntimeException("❌ Not enough expand arrows found!");
+ if (platformCells == null || platformCells.isEmpty()) {
+     logger.warning("⚠ No platform rows found!");
+     return platformNames;
  }
 
- logger.info("⬇ Expanding Level 1 (index 0)");
- WebElement level1 = arrows.get(0);
- ShadowDom.scrollIntoViewCenter(driver, level1);
- ShadowDom.jsClick(driver, level1);
+ for (WebElement element : platformCells) {
 
- Thread.sleep(1500);
+     String name = element.getText().trim();
 
- // Re-fetch arrows after expansion
- arrows = ShadowDom.findAllDeep(
-         driver,
-         ANY_EXPAND_BUTTON_DEEP,
-         logger);
+     if (!name.isEmpty() && !platformNames.contains(name)) {
+         platformNames.add(name);
+     }
+ }
 
- logger.info("⬇ Expanding Level 2 (index 2)");
- WebElement level2 = arrows.get(2);   // 👈 key change
- ShadowDom.scrollIntoViewCenter(driver, level2);
- ShadowDom.jsClick(driver, level2);
+ logger.info("🧠 Detected Platforms: " + platformNames);
 
- Thread.sleep(2000);
-
- logger.info("✅ SEEBURGER expansion completed using index.");
+ return platformNames;
 }
+
 }

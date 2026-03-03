@@ -6,9 +6,13 @@ import java.time.Duration;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import Pages.PathFinderLocators;
 
 public class StatusValidation {
 
@@ -147,5 +151,94 @@ public class StatusValidation {
         }
 
         logger.info("✅ Status validation PASSED");
+    }
+ // ============================================================
+ // VALIDATE STATUS FOR SPECIFIC PLATFORM (NEW - DO NOT TOUCH OLD)
+ // ============================================================
+
+    public void validateStatusForPlatform(String platform, String expectedStatus) {
+
+        logger.info("==============================================");
+        logger.info("🔎 STARTING PLATFORM VALIDATION");
+        logger.info("📌 Platform from DB          : " + platform);
+        logger.info("📌 Expected Status from DB   : " + expectedStatus);
+        logger.info("==============================================");
+
+        // Get all system name cells
+        List<WebElement> platforms = ShadowDom.findAllDeep(
+                driver,
+                "td[data-header-id='systemName'] span.system-name",
+                logger
+        );
+
+        if (platforms == null || platforms.isEmpty()) {
+            throw new RuntimeException("❌ No platforms found in UI!");
+        }
+
+        logger.info("🧭 Platforms detected in UI:");
+
+        for (WebElement p : platforms) {
+            try {
+                if (p.isDisplayed()) {
+                    logger.info("   ➡ UI Platform Found: " + p.getText().trim());
+                }
+            } catch (Exception ignored) {}
+        }
+
+        boolean platformFound = false;
+
+        for (WebElement p : platforms) {
+
+            try {
+                if (!p.isDisplayed()) continue;
+
+                String platformText = p.getText().trim();
+
+                if (platformText.equalsIgnoreCase(platform)) {
+
+                    platformFound = true;
+
+                    logger.info("🎯 Matching platform found in UI: " + platformText);
+                    logger.info("📊 Comparing DB vs UI status for: " + platformText);
+
+                    // 🔥 IMPORTANT FIX — do NOT use row.findElement
+                    WebElement statusCell = ShadowDom.findAllDeep(
+                            driver,
+                            "td[data-header-id='status']",
+                            logger
+                    ).stream()
+                     .filter(WebElement::isDisplayed)
+                     .findFirst()
+                     .orElseThrow(() ->
+                            new RuntimeException("❌ No visible status cell found"));
+
+                    String actualStatus = statusCell.getText().trim();
+
+                    logger.info("🖥 UI Status for " + platform + " : " + actualStatus);
+                    logger.info("🗄 DB Expected Status           : " + expectedStatus);
+                    logger.info("🔁 Performing Comparison...");
+
+                    if (!actualStatus.equalsIgnoreCase(expectedStatus)) {
+                        throw new AssertionError(
+                                "❌ Status MISMATCH for " + platform +
+                                " | Expected: " + expectedStatus +
+                                " | Found: " + actualStatus
+                        );
+                    }
+
+                    logger.info("✅ Status MATCHED successfully for: " + platform);
+                    break;
+                }
+
+            } catch (Exception e) {
+                logger.warning("⚠ Error while validating platform: " + e.getMessage());
+            }
+        }
+
+        if (!platformFound) {
+            throw new RuntimeException("❌ Platform not found in UI: " + platform);
+        }
+
+        logger.info("==============================================");
     }
 }

@@ -139,11 +139,12 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
         ExpandDownArrows expander = new ExpandDownArrows(driver);
 
+        // ✅ Use existing working method
         expander.expandSeeburgerByIndex();
 
         StatusValidation statusValidation = new StatusValidation(driver);
-        statusValidation.validateVisibleStatus(expectedStatus);
-
+        //statusValidation.validateVisibleStatus(expectedStatus);
+        statusValidation.validateStatusForPlatform("SEEBURGER", expectedStatus);
         logger.info("✅ SEEBURGER validation completed successfully.");
     }
     
@@ -386,7 +387,53 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
         }
     }
  // ============================================================
- // SEEBURGER GENERIC EXPANSION (USES ANY_EXPAND_BUTTON_DEEP)
+ // SMART SEEBURGER HANDLER (WITHOUT TOUCHING EXISTING CODE)
  // ============================================================
+
+ public void expandAndValidateSeeburgerSmart(String expectedStatus) throws InterruptedException {
+
+     logger.info("🟣 ===== SMART SEEBURGER PROCESSING =====");
+
+     ExpandDownArrows expander = new ExpandDownArrows(driver);
+
+     // Expand Level 1 first
+     expander.expandFirstTransactionRow();
+
+     List<String> platforms = expander.getAvailablePlatforms();
+
+     // Case 1: Only SEEBURGER exists
+     if (platforms.size() == 1 && platforms.contains("SEEBURGER")) {
+
+         logger.info("🔹 Only SEEBURGER present");
+
+         expander.expandSeeburgerByIndex();
+
+         new StatusValidation(driver).validateVisibleStatus(expectedStatus);
+         return;
+     }
+
+     // Case 2: AMPS + SEEBURGER
+     if (platforms.contains("AMPS")) {
+
+         logger.info("🔵 Expanding AMPS first...");
+
+         expander.expandPlatformRowInsideExpandedSection("AMPS");
+
+         new StatusValidation(driver).validateVisibleStatus(expectedStatus);
+
+         Thread.sleep(1000);
+     }
+
+     if (platforms.contains("SEEBURGER")) {
+
+         logger.info("🟣 Expanding SEEBURGER after AMPS...");
+
+         expander.expandSeeburgerByIndex();
+
+         new StatusValidation(driver).validateVisibleStatus(expectedStatus);
+     }
+
+     logger.info("✅ SMART SEEBURGER validation completed.");
+ }
 
 }
