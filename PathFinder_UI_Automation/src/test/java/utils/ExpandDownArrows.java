@@ -2,11 +2,18 @@ package utils;
 
 import static Pages.PathFinderLocators.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import Pages.PathFinderLocators;
 
 public class ExpandDownArrows {
 
@@ -18,77 +25,217 @@ public class ExpandDownArrows {
     }
 
     // ============================================================
-    // EXPAND FIRST VISIBLE ARROW
+    // LEVEL 1 – Expand First Transaction Row
     // ============================================================
 
-    private void expandFirstVisibleArrow() {
+    public void expandFirstTransactionRow() {
 
-        List<WebElement> arrows =
-                ShadowDom.findAllDeep(
+        logger.info("⬇ Expanding Level 1 (Transaction)...");
+
+        WebElement arrow =
+                ShadowDom.waitForInnerClickable(
                         driver,
-                        ANY_EXPAND_BUTTON_DEEP,
-                        logger);
+                        PathFinderLocators.PLATFORM_ROW_EXPANDER_HOST,
+                        PathFinderLocators.PLATFORM_ROW_EXPANDER_INNER,
+                        10,
+                        logger
+                );
 
-        if (arrows == null || arrows.isEmpty()) {
-            throw new RuntimeException("❌ No expand arrows found on page!");
+        if (arrow == null) {
+            throw new RuntimeException("❌ Level 1 expand arrow not found");
         }
 
-        for (WebElement arrow : arrows) {
-            try {
-                if (arrow.isDisplayed()) {
-                    ShadowDom.scrollIntoViewCenter(driver, arrow);
-                    ShadowDom.jsClick(driver, arrow);
-                    logger.info("🔽 Expanded a visible arrow.");
-                    return;
-                }
-            } catch (Exception ignored) {}
-        }
+        ShadowDom.scrollIntoViewCenter(driver, arrow);
+        ShadowDom.jsClick(driver, arrow);
 
-        throw new RuntimeException("❌ No visible expand arrow found!");
+        logger.info("✅ Level 1 expanded");
+
+        try { Thread.sleep(2000); } catch (Exception ignored) {}
     }
 
     // ============================================================
-    // EXPAND TO FINAL LEVEL (LEVEL 1 + LEVEL 2)
+    // LEVEL 2 – Expand Platform By Name (AMPS / SEEBURGER)
     // ============================================================
 
-    public void expandToFinalLevel() throws InterruptedException {
+    public void expandPlatformRowInsideExpandedSection(String platformName) {
 
-        logger.info("⬇ Expanding Level 1...");
-        expandFirstVisibleArrow();
-        Thread.sleep(1500);
+        logger.info("⬇ Expanding Level 2 (" + platformName + ")...");
 
-        logger.info("⬇ Expanding Level 2...");
-        expandFirstVisibleArrow();
-        Thread.sleep(2000);
+        List<WebElement> platformCells =
+                ShadowDom.findAllDeep(
+                        driver,
+                        "td[data-header-id='systemName'] span.system-name",
+                        logger
+                );
+
+        if (platformCells == null || platformCells.isEmpty()) {
+            throw new RuntimeException("❌ No platform rows found!");
+        }
+
+        for (WebElement platformElement : platformCells) {
+
+            String text = platformElement.getText().trim();
+            logger.info("➡ Found platform: " + text);
+
+            if (text.equalsIgnoreCase(platformName)) {
+
+                logger.info("✅ Matched platform: " + platformName);
+
+                // Get row using JS (safe for Shadow DOM)
+                WebElement row = (WebElement) ((JavascriptExecutor) driver)
+                        .executeScript("return arguments[0].closest('tr');", platformElement);
+
+                WebElement arrow =
+                        row.findElement(By.cssSelector("button[aria-label='Expand row']"));
+
+                ShadowDom.scrollIntoViewCenter(driver, arrow);
+                ShadowDom.jsClick(driver, arrow);
+
+                logger.info("✅ Level 2 expanded for: " + platformName);
+
+                try { Thread.sleep(2000); } catch (Exception ignored) {}
+
+                return;
+            }
+        }
+
+        throw new RuntimeException("❌ Platform row not found: " + platformName);
+    }
+
+    // ============================================================
+    // EXPAND TO FINAL LEVEL (Level 1 + Level 2)
+    // ============================================================
+
+    public void expandToFinalLevel(String platformName) {
+
+        expandFirstTransactionRow();
+        expandPlatformRowInsideExpandedSection(platformName);
 
         logger.info("✅ Expansion completed.");
     }
+ // ============================================================
+ // EXPAND LEVEL 1 + NEXT LEVEL SAFELY (WITHOUT RECLICKING SAME)
+ // ============================================================
 
-    // ============================================================
-    // EXPAND ONLY THIRD LEVEL (FOR ERROR)
-    // ============================================================
+ // ============================================================
+ // EXPAND LEVEL 1 + LEVEL 2 SAFELY (NEW METHOD)
+ // ============================================================
 
-    public void expandOnlyThirdLevel() throws InterruptedException {
+ public void expandTwoLevelsSafely(String platformName) throws InterruptedException {
 
-        List<WebElement> arrows =
-                ShadowDom.findAllDeep(
-                        driver,
-                        ANY_EXPAND_BUTTON_DEEP,
-                        logger);
+     logger.info("⬇ Expanding Level 1...");
+     expandFirstTransactionRow();
+     Thread.sleep(2000);
 
-        if (arrows == null || arrows.size() < 3) {
-            throw new RuntimeException("❌ Not enough expand arrows found!");
-        }
+     logger.info("⬇ Expanding Level 2 (" + platformName + ")...");
+     expandPlatformRowInsideExpandedSection(platformName);
+     Thread.sleep(2000);
 
-        logger.info("⬇ Clicking ONLY Level 3 Arrow (index 2)");
+     logger.info("✅ Two-level expansion completed safely.");
+ }
+ 
+//============================================================
+//SAFE EXPANSION FOR SEEBURGER (DOES NOT BREAK AMPS)
+//============================================================
 
-        WebElement thirdArrow = arrows.get(2);
+public void expandToFinalLevelSafe() throws InterruptedException {
 
-        ShadowDom.scrollIntoViewCenter(driver, thirdArrow);
-        ShadowDom.jsClick(driver, thirdArrow);
+  logger.info("⬇ [SAFE] Expanding Level 1...");
 
-        Thread.sleep(2000);
+  List<WebElement> arrows =
+          ShadowDom.findAllDeep(
+                  driver,
+                  ANY_EXPAND_BUTTON_DEEP,
+                  logger);
 
-        logger.info("✅ Level 3 expansion completed");
-    }
+  if (arrows == null || arrows.isEmpty()) {
+      throw new RuntimeException("❌ No expand arrows found!");
+  }
+
+  // Click first arrow
+  WebElement firstArrow = arrows.get(0);
+  ShadowDom.scrollIntoViewCenter(driver, firstArrow);
+  ShadowDom.jsClick(driver, firstArrow);
+
+  Thread.sleep(1500);
+
+  logger.info("⬇ [SAFE] Expanding Level 2...");
+
+  // Re-fetch arrows AFTER first expansion
+  arrows =
+          ShadowDom.findAllDeep(
+                  driver,
+                  ANY_EXPAND_BUTTON_DEEP,
+                  logger);
+
+  if (arrows.size() < 2) {
+      throw new RuntimeException("❌ Second level arrow not found!");
+  }
+
+  WebElement secondArrow = arrows.get(1);
+  ShadowDom.scrollIntoViewCenter(driver, secondArrow);
+  ShadowDom.jsClick(driver, secondArrow);
+
+  Thread.sleep(2000);
+
+  logger.info("✅ SAFE Expansion completed.");
+}
+//============================================================
+//EXPAND LEVEL 1 + EXPLICIT SECOND ARROW (FOR SEEBURGER)
+//============================================================
+
+//============================================================
+//EXPAND LEVEL 1 + LEVEL 2 USING EXISTING METHODS
+//============================================================
+
+public void expandToFinalLevelForSeeburger(String platformName) throws InterruptedException {
+
+ logger.info("⬇ Expanding Level 1 (SEEBURGER)...");
+ expandFirstTransactionRow();
+ Thread.sleep(2000);
+
+ logger.info("⬇ Expanding Level 2 (" + platformName + ")...");
+ expandPlatformRowInsideExpandedSection(platformName);
+ Thread.sleep(2000);
+
+ logger.info("✅ SEEBURGER expansion completed.");
+}
+//============================================================
+//SEEBURGER EXPANSION USING INDEX (STABLE)
+//============================================================
+
+public void expandSeeburgerByIndex() throws InterruptedException {
+
+ List<WebElement> arrows =
+         ShadowDom.findAllDeep(
+                 driver,
+                 ANY_EXPAND_BUTTON_DEEP,
+                 logger);
+
+ if (arrows == null || arrows.size() < 3) {
+     throw new RuntimeException("❌ Not enough expand arrows found!");
+ }
+
+ logger.info("⬇ Expanding Level 1 (index 0)");
+ WebElement level1 = arrows.get(0);
+ ShadowDom.scrollIntoViewCenter(driver, level1);
+ ShadowDom.jsClick(driver, level1);
+
+ Thread.sleep(1500);
+
+ // Re-fetch arrows after expansion
+ arrows = ShadowDom.findAllDeep(
+         driver,
+         ANY_EXPAND_BUTTON_DEEP,
+         logger);
+
+ logger.info("⬇ Expanding Level 2 (index 2)");
+ WebElement level2 = arrows.get(2);   // 👈 key change
+ ShadowDom.scrollIntoViewCenter(driver, level2);
+ ShadowDom.jsClick(driver, level2);
+
+ Thread.sleep(2000);
+
+ logger.info("✅ SEEBURGER expansion completed using index.");
+}
 }

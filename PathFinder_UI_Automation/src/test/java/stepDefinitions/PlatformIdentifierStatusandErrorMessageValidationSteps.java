@@ -1,14 +1,20 @@
 package stepDefinitions;
 
+import Pages.PathFinderLocators;
 import Pages.PlatformIdentifierStatusErrorandTerminatedMessageValidation;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.Properties;
+import java.time.Duration;
+import java.util.List;
 import java.util.logging.Logger;
 
 import utils.TestContext;
-import utils.StatusValidation;
+import utils.DatabaseUtils;
+import utils.PlatformRecord;
+import utils.StatusMapper;
 
 public class PlatformIdentifierStatusandErrorMessageValidationSteps {
 
@@ -30,82 +36,82 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
         return driver;
     }
 
-    private Properties getProperties() {
-        return context.getProperties();
-    }
-
     @Then("User validates PlatformIdentifier")
     public void user_validates_platform_identifier() throws InterruptedException {
 
         WebDriver driver = getDriver();
-        Properties props = getProperties();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
         PlatformIdentifierStatusErrorandTerminatedMessageValidation platformPage =
                 new PlatformIdentifierStatusErrorandTerminatedMessageValidation(driver);
 
-        StatusValidation statusValidation =
-                new StatusValidation(driver);
+        logger.info("🚀 ===== DB vs UI Platform Identifier Validation Started =====");
 
-        // 🔥 Read platform IDs from config
-        String orangePlatformId = props.getProperty("ORANGE_PLATFORM_ID");
-        String redPlatformId    = props.getProperty("RED_PLATFORM_ID");
-        String greenPlatformId  = props.getProperty("GREEN_PLATFORM_ID");
+        // Wait until dashboard is ready
+        wait.until(ExpectedConditions.elementToBeClickable(
+                PathFinderLocators.TRACE_TABLE_TAB));
 
-        logger.info("================================================================");
-        logger.info("🚀 ===== Platform Identifier End-to-End Validation Started =====");
-        logger.info("================================================================");
+        logger.info("✅ Dashboard Loaded");
 
-        // ============================================================
-        // 🟠 ORANGE FLOW
-        // ============================================================
-
-        logger.info("🟠 STEP 1: ORANGE Flow Validation Started");
-
+        // Open Trace Table
         platformPage.clickTraceTableTab();
-        platformPage.enterPlatformIdentifierAndSearch(orangePlatformId);
 
-        platformPage.processOrangeFlow();
-        statusValidation.validateTerminatedStatus();
+        // Fetch latest records from DB
+        List<PlatformRecord> records =
+                DatabaseUtils.getLatestPlatformIdentifiers(context.getProperties());
 
-        logger.info("✅ ORANGE Flow PASSED Successfully");
+        if (records.isEmpty()) {
+            throw new RuntimeException("❌ No platform identifiers found in DB!");
+        }
 
-        // ============================================================
-        // 🔴 RED FLOW
-        // ============================================================
+        logger.info("📊 Total Records From DB: " + records.size());
 
-        logger.info("🔴 STEP 2: RED Flow Validation Started");
+        for (PlatformRecord record : records) {
 
-        platformPage.updatePlatformIdentifierAndSearch(redPlatformId);
+            String platformId   = record.getPlatformId();
+            String dbStatus     = record.getDbStatus().toUpperCase();
+            String originSystem = record.getOriginSystem().toUpperCase();
 
-        platformPage.processRedFlow();
-        statusValidation.validateSuccessStatus();
+            String normalizedDbStatus =
+                    StatusMapper.mapDbToUiStatus(dbStatus, originSystem);
 
-        logger.info("✅ RED Flow PASSED Successfully");
+            logger.info("==================================================");
+            logger.info("📌 Platform ID            : " + platformId);
+            logger.info("🔵 " + originSystem + " Status (DB)  : " + dbStatus);
+            logger.info("🔄 Normalized DB Status   : " + normalizedDbStatus);
+            logger.info("==================================================");
 
-        // ============================================================
-        // 🔴 ERROR (3rd Level Expansion)
-        // ============================================================
+            // 🔍 SEARCH PLATFORM ID
+            platformPage.updatePlatformIdentifierAndSearch(platformId);
 
-        logger.info("⬇ STEP 3: ERROR Validation");
+            logger.info("⏳ Waiting for table refresh...");
+            platformPage.waitForExpandArrowsAfterSearch();
+            Thread.sleep(2000);
 
-        platformPage.expandToErrorLevel();
-        statusValidation.validateErrorStatus();
+            logger.info("🔎 Expanding system: " + originSystem);
 
-        logger.info("✅ ERROR Status Validated Successfully");
+            // ============================================================
+            // EXPAND + VALIDATE BASED ON SYSTEM
+            // ============================================================
 
-        // ============================================================
-        // 🟢 GREEN FLOW
-        // ============================================================
+            if (originSystem.equalsIgnoreCase("AMPS")) {
 
-        logger.info("🟢 STEP 4: GREEN Flow Validation Started");
+                // ✅ Working method unchanged
+                platformPage.expandAndValidateAmps(normalizedDbStatus);
 
-        platformPage.updatePlatformIdentifierAndSearch(greenPlatformId);
+            } else if (originSystem.equalsIgnoreCase("SEEBURGER")) {
 
-        platformPage.processGreenFlow();
-        statusValidation.validateSuccessStatus();
+                // ✅ SEEBURGER only needs expectedStatus
+                platformPage.expandAndValidateSeeburger(normalizedDbStatus);
 
-        logger.info("✅ GREEN Flow PASSED Successfully");
+            } else {
 
-        logger.info("🎉 ===== ALL FLOWS VALIDATED SUCCESSFULLY =====");
+                throw new RuntimeException("❌ Unknown origin system: " + originSystem);
+            }
+
+            logger.info("✅ " + originSystem + " status MATCHED");
+        }
+
+        logger.info("🎉 ===== ALL PLATFORM IDENTIFIERS VALIDATED SUCCESSFULLY =====");
     }
 }

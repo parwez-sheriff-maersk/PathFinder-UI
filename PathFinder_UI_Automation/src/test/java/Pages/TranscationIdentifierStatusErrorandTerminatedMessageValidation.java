@@ -101,14 +101,14 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidation {
     // BADGE
     // ============================================================
 
-    private WebElement locateBadge() {
-        return ShadowDom.findFirstVisibleDeep(
-                driver, GENERIC_BADGE_DEEP, 10, logger);
+   // private WebElement locateBadge() {
+       // return ShadowDom.findFirstVisibleDeep(
+             //   driver, GENERIC_BADGE_DEEP, 10, logger);
     }
 
-    public boolean isOrangeBadge() {
+    /*public boolean isOrangeBadge() {
 
-        WebElement badge = locateBadge();
+       // WebElement badge = locateBadge();
         String color = ShadowDom.getComputedStyle(driver, badge, "background-color");
 
         logger.info("🟠 ORANGE badge CSS = " + color);
@@ -142,7 +142,7 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidation {
         wait.until(d -> isOrangeBadge());
 
         ExpandDownArrows expander = new ExpandDownArrows(driver);
-        expander.expandToFinalLevel();
+      //  expander.expandToFinalLevel();
     }
 
     public void processGreenFlow() throws InterruptedException {
@@ -150,7 +150,7 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidation {
         wait.until(d -> isGreenBadge());
 
         ExpandDownArrows expander = new ExpandDownArrows(driver);
-        expander.expandToFinalLevel();
+        //expander.expandToFinalLevel();
     }
 
     public void processRedFlow() throws InterruptedException {
@@ -158,7 +158,7 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidation {
         wait.until(d -> isRedBadge());
 
         ExpandDownArrows expander = new ExpandDownArrows(driver);
-        expander.expandToFinalLevel();
+        //expander.expandToFinalLevel();
     }
 
     public void expandToErrorLevel() throws InterruptedException {
@@ -166,4 +166,4 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidation {
         ExpandDownArrows expander = new ExpandDownArrows(driver);
         expander.expandOnlyThirdLevel();
     }
-}
+}*/

@@ -18,7 +18,7 @@ public class Login {
     private final By passwordField = By.id("i0118");
     private final By yesButton = By.id("idSIButton9");
     private final By accessToMaerskEmployeesText =
-            By.xpath("//*[text()='Access to Maersk employees']");
+            By.cssSelector("button.login-page__btn");
     private final By myRequestsText =
             By.xpath("//*[text()='My Requests']");
 

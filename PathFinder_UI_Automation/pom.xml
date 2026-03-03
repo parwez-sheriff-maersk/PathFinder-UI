@@ -65,6 +65,13 @@
             <version>5.8.0</version>
         </dependency>
 
+        <!-- PostgreSQL JDBC Driver (NEW) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
+
         <!-- OTP Libraries -->
         <dependency>
             <groupId>com.github.bastiaanjansen</groupId>

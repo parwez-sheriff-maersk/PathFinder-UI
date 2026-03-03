@@ -20,18 +20,17 @@ public class StatusValidation {
     }
 
     // ============================================================
-    // GENERIC STATUS VALIDATION
+    // VALIDATE ONLY VISIBLE STATUS CELLS (AFTER EXPANSION)
     // ============================================================
 
-    private void validateStatus(String expectedStatus) {
+    public void validateVisibleStatus(String expectedStatus) {
 
         logger.info("==============================================");
-        logger.info("🔎 Validating Expected Status: " + expectedStatus);
+        logger.info("🔎 Validating Visible Status Rows Only");
         logger.info("==============================================");
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
-        // Wait until at least one status cell appears
         wait.until(d ->
                 ShadowDom.findAllDeep(
                         driver,
@@ -47,48 +46,106 @@ public class StatusValidation {
                         logger
                 );
 
-        boolean matchFound = false;
+        boolean hasError = false;
+        boolean hasTerminated = false;
+        boolean hasSuccess = false;
+        boolean hasRunning = false;
 
         for (WebElement cell : statusCells) {
 
-            String text = cell.getText().trim().toUpperCase();
+            try {
 
-            if (!text.isEmpty()) {
+                if (!cell.isDisplayed()) continue;
+
+                String text = cell.getText().trim().toUpperCase();
+
+                if (text.isEmpty()) continue;
+
                 logger.info("Status found: " + text);
-            }
 
-            if (text.equals(expectedStatus.toUpperCase())) {
-                matchFound = true;
-                break;
-            }
+                if (text.contains("ERROR") || text.contains("FAIL"))
+                    hasError = true;
+
+                if (text.contains("TERMINATED") || text.contains("CANCELLED"))
+                    hasTerminated = true;
+
+                if (text.contains("SUCCESS") || text.contains("COMPLETED") || text.contains("CREATED"))
+                    hasSuccess = true;
+
+                if (text.contains("RUNNING") || text.contains("IN_PROGRESS"))
+                    hasRunning = true;
+
+            } catch (Exception ignored) {}
         }
 
-        if (!matchFound) {
+        String finalUiStatus;
+
+        if (hasError) {
+            finalUiStatus = "ERROR";
+        } else if (hasTerminated) {
+            finalUiStatus = "TERMINATED";
+        } else if (hasSuccess) {
+            finalUiStatus = "SUCCESS";
+        } else if (hasRunning) {
+            finalUiStatus = "RUNNING";
+        } else {
+            throw new AssertionError("❌ Unable to determine final status!");
+        }
+
+        logger.info("🎯 Final UI Status: " + finalUiStatus);
+        logger.info("📌 Expected Status: " + expectedStatus);
+
+        if (!finalUiStatus.equalsIgnoreCase(expectedStatus)) {
             throw new AssertionError(
-                    expectedStatus + " status not found in expanded rows"
+                    "❌ STATUS MISMATCH → Expected: "
+                            + expectedStatus
+                            + " | Found: "
+                            + finalUiStatus
             );
         }
 
-        logger.info("✅ " + expectedStatus + " status validation PASSED.");
+        logger.info("✅ Status MATCHED successfully.");
     }
+    public void validateVisibleStatusForAmps(String expectedStatus, String selector) {
 
-    // ============================================================
-    // PUBLIC METHODS
-    // ============================================================
+        logger.info("==============================================");
+        logger.info("🔎 Validating AMPS Expanded Status Only");
+        logger.info("==============================================");
 
-    public void validateSuccessStatus() {
-        validateStatus("SUCCESS");
-    }
+        List<WebElement> statusCells =
+                ShadowDom.findAllDeep(driver, selector, logger);
 
-    public void validateErrorStatus() {
-        validateStatus("ERROR");
-    }
+        if (statusCells == null || statusCells.isEmpty()) {
+            throw new AssertionError("❌ No AMPS status cells found!");
+        }
 
-    public void validateFailedStatus() {
-        validateStatus("FAILED");
-    }
+        String finalStatus = null;
 
-    public void validateTerminatedStatus() {
-        validateStatus("TERMINATED");
+        for (WebElement cell : statusCells) {
+
+            if (!cell.isDisplayed()) continue;
+
+            String text = cell.getText().trim();
+            logger.info("➡ Found Status: " + text);
+
+            if (!text.isEmpty()) {
+                finalStatus = text;
+            }
+        }
+
+        if (finalStatus == null) {
+            throw new AssertionError("❌ Unable to determine final status!");
+        }
+
+        logger.info("🎯 Final Visible Status: " + finalStatus);
+        logger.info("🎯 Expected Status: " + expectedStatus);
+
+        if (!finalStatus.equalsIgnoreCase(expectedStatus)) {
+            throw new AssertionError(
+                    "❌ Status mismatch! Expected: "
+                            + expectedStatus + " but found: " + finalStatus);
+        }
+
+        logger.info("✅ Status validation PASSED");
     }
 }

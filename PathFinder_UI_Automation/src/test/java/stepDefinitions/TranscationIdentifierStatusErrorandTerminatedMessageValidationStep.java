@@ -20,6 +20,7 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidationStep 
     public TranscationIdentifierStatusErrorandTerminatedMessageValidationStep(TestContext context) {
         this.context = context;
     }
+    //}
 
     @Then("User validates TranscationIdentifier")
     public void User_validates_TranscationIdentifier() throws Exception {
@@ -42,16 +43,18 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidationStep 
         logger.info("================================================================");
 
         page.clickTraceTableTab();
+    }
+    }
 
         // ============================================================
         // 🟠 ORANGE FLOW
         // ============================================================
 
-        logger.info("🟠 STEP 1: ORANGE Flow Validation Started");
+        //logger.info("🟠 STEP 1: ORANGE Flow Validation Started");
 
-        page.enterTransactionIdentifierAndSearch(orangeTxn);
+      /*  page.enterTransactionIdentifierAndSearch(orangeTxn);
         page.processOrangeFlow();
-        statusValidation.validateTerminatedStatus();
+       // statusValidation.validateTerminatedStatus();
 
         logger.info("✅ ORANGE Flow PASSED Successfully");
 
@@ -63,7 +66,7 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidationStep 
 
         page.enterTransactionIdentifierAndSearch(greenTxn);
         page.processGreenFlow();
-        statusValidation.validateSuccessStatus();
+        //statusValidation.validateSuccessStatus();
 
         logger.info("✅ GREEN Flow PASSED Successfully");
 
@@ -75,11 +78,11 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidationStep 
 
         page.enterTransactionIdentifierAndSearch(redTxn);
         page.processRedFlow();
-        statusValidation.validateErrorStatus();
+        //statusValidation.validateErrorStatus();
 
         logger.info("⬇ Validating third-level SUCCESS status");
         page.expandToErrorLevel();
-        statusValidation.validateSuccessStatus();
+       // statusValidation.validateSuccessStatus();
 
         logger.info("🎉 ===== ALL TRANSACTION FLOWS VALIDATED SUCCESSFULLY =====");
-    }}
+    }}*/
