@@ -189,5 +189,44 @@ public final class ShadowDom {
             e.printStackTrace();
         }
     }
+ // ============================================================
+ // DEEP SEARCH FROM SCOPED ELEMENT (OVERLOADED VERSION)
+ // ============================================================
 
-}
+ @SuppressWarnings("unchecked")
+ public static List<WebElement> findAllDeep(
+         WebDriver driver,
+         WebElement rootElement,
+         String cssSelector,
+         Logger logger) {
+
+     if (logger != null)
+         logger.info("🔎 Deep searching inside scoped element: " + cssSelector);
+
+     Object result = ((JavascriptExecutor) driver).executeScript(
+             "const root = arguments[0];" +
+             "const sel = arguments[1];" +
+             "const out = [];" +
+             "function walk(node) {" +
+             "  if (!node) return;" +
+             "  if (node.querySelectorAll) {" +
+             "    try { node.querySelectorAll(sel).forEach(e => out.push(e)); } catch(e){}" +
+             "  }" +
+             "  if (node.shadowRoot) walk(node.shadowRoot);" +
+             "  if (node.children) Array.from(node.children).forEach(walk);" +
+             "}" +
+             "walk(root);" +
+             "return out;",
+             rootElement,
+             cssSelector);
+
+     List<WebElement> elements = (List<WebElement>) result;
+
+     if (logger != null)
+         logger.info("Scoped elements count: "
+                 + (elements == null ? 0 : elements.size()));
+
+     return elements;
+ }
+
+ }

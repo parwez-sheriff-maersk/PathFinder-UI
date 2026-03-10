@@ -170,4 +170,101 @@ ShadowDom.findAllDeep(driver,
 "td[data-header-id='systemName'] span.system-name",
 logger);
 
-}}
+}
+  //============================================================
+ // VALIDATE STATUS WITH FULL DB + UI LOGGING (NEW METHOD)
+ //============================================================
+
+    public void validateStatusWithLogging(String platformName,
+            String expectedStatus,
+            String houseBillValue,
+            String traceId,
+            String dbRawStatus) {
+
+logger.info("==================================================");
+logger.info("🔎 VALIDATION STARTED");
+logger.info("📌 Platform        : " + platformName);
+logger.info("📌 House Bill      : " + houseBillValue);
+logger.info("📌 Trace ID        : " + traceId);
+logger.info("📌 DB Raw Status   : " + dbRawStatus);
+logger.info("📌 Expected UI Map : " + expectedStatus);
+logger.info("==================================================");
+
+List<WebElement> statusCells =
+ShadowDom.findAllDeep(driver, STATUS_CELL_DEEP, logger);
+
+if (statusCells == null || statusCells.isEmpty()) {
+throw new AssertionError("❌ No status cells found in expanded row!");
+}
+
+boolean hasError = false;
+boolean hasTerminated = false;
+boolean hasSuccess = false;
+boolean hasRunning = false;
+
+for (WebElement cell : statusCells) {
+
+try {
+
+if (!cell.isDisplayed())
+continue;
+
+String text = cell.getText().trim().toUpperCase();
+
+if (text.isEmpty())
+continue;
+
+logger.info("➡ Status found: " + text);
+
+if (text.contains("ERROR") || text.contains("FAIL"))
+hasError = true;
+
+if (text.contains("TERMINATED") || text.contains("CANCELLED"))
+hasTerminated = true;
+
+if (text.contains("SUCCESS") || text.contains("COMPLETED") || text.contains("CREATED"))
+hasSuccess = true;
+
+if (text.contains("RUNNING") || text.contains("IN_PROGRESS"))
+hasRunning = true;
+
+} catch (Exception ignored) {}
+}
+
+String finalUiStatus;
+
+if (hasError) {
+finalUiStatus = "ERROR";
+} else if (hasTerminated) {
+finalUiStatus = "TERMINATED";
+} else if (hasSuccess) {
+finalUiStatus = "SUCCESS";
+} else if (hasRunning) {
+finalUiStatus = "RUNNING";
+} else {
+throw new AssertionError("❌ Unable to determine final UI status!");
+}
+
+logger.info("🎯 Final UI Status: " + finalUiStatus);
+logger.info("📌 Expected Status: " + expectedStatus);
+
+if (!finalUiStatus.equalsIgnoreCase(expectedStatus)) {
+
+logger.severe("❌ STATUS MISMATCH DETECTED");
+logger.severe("   DB Raw Status : " + dbRawStatus);
+logger.severe("   Expected UI   : " + expectedStatus);
+logger.severe("   Actual UI     : " + finalUiStatus);
+logger.severe("==================================================");
+
+throw new AssertionError(
+"❌ STATUS MISMATCH → Expected: "
++ expectedStatus
++ " | Found: "
++ finalUiStatus
+);
+}
+
+logger.info("✅ STATUS MATCHED SUCCESSFULLY.");
+logger.info("==================================================");
+}
+}

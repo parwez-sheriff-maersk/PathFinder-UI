@@ -290,5 +290,320 @@ public List<String> getAvailablePlatforms() {
 
  return platformNames;
 }
+//============================================================
+//EXPAND FIRST TRANSACTION + SEEBURGER ONLY (NO LOOP)
+//============================================================
 
+//============================================================
+//EXPAND FIRST TRANSACTION + SEEBURGER (SCOPED & STABLE)
+//============================================================
+
+public void expandFirstSeeburgerScoped() throws InterruptedException {
+
+ logger.info("⬇ Expanding FIRST transaction (Level 1)...");
+
+ List<WebElement> level1Arrows =
+         ShadowDom.findAllDeep(
+                 driver,
+                 "mc-button.mc-table__expanded-row__trigger button[aria-label='Expand row']",
+                 logger);
+
+ if (level1Arrows == null || level1Arrows.isEmpty()) {
+     throw new RuntimeException("❌ No Level 1 arrows found!");
+ }
+
+ WebElement level1Arrow = level1Arrows.get(0);
+
+ ShadowDom.scrollIntoViewCenter(driver, level1Arrow);
+ ShadowDom.jsClick(driver, level1Arrow);
+
+ Thread.sleep(2000);
+
+ logger.info("⬇ Looking for SEEBURGER inside expanded section...");
+
+ // 🔥 Scope to this transaction only
+ WebElement transactionRow = (WebElement) ((JavascriptExecutor) driver)
+         .executeScript("return arguments[0].closest('tr');", level1Arrow);
+
+ WebElement expandedRow = (WebElement) ((JavascriptExecutor) driver)
+         .executeScript("return arguments[0].nextElementSibling;", transactionRow);
+
+ if (expandedRow == null) {
+     throw new RuntimeException("❌ Expanded section not found!");
+ }
+
+ // Find SEEBURGER inside THIS section only
+ List<WebElement> platforms =
+         expandedRow.findElements(
+                 By.cssSelector("td[data-header-id='systemName'] span.system-name"));
+
+ for (WebElement platform : platforms) {
+
+     if (platform.getText().trim().equalsIgnoreCase("SEEBURGER")) {
+
+         logger.info("✅ SEEBURGER found inside first transaction");
+
+         WebElement platformRow = (WebElement) ((JavascriptExecutor) driver)
+                 .executeScript("return arguments[0].closest('tr');", platform);
+
+         WebElement level2Arrow =
+                 platformRow.findElement(By.cssSelector("button[aria-label='Expand row']"));
+
+         ShadowDom.scrollIntoViewCenter(driver, level2Arrow);
+         ShadowDom.jsClick(driver, level2Arrow);
+
+         Thread.sleep(2000);
+
+         logger.info("✅ SEEBURGER expanded successfully");
+         return;
+     }
+ }
+
+ throw new RuntimeException("❌ SEEBURGER not found inside first transaction!");
+}
+//============================================================
+//EXPAND FIRST TRANSACTION (GENERIC VERSION FOR SEARCH RESULT)
+//============================================================
+
+public void expandFirstTransactionSimple() throws InterruptedException {
+
+ logger.info("⬇ Expanding FIRST transaction (simple mode)...");
+
+ List<WebElement> arrows =
+         ShadowDom.findAllDeep(
+                 driver,
+                 "button[aria-label='Expand row']",
+                 logger);
+
+ if (arrows == null || arrows.isEmpty()) {
+     throw new RuntimeException("❌ No expand arrows found!");
+ }
+
+ // Click first visible arrow only
+ WebElement firstArrow = null;
+
+ for (WebElement arrow : arrows) {
+     if (arrow.isDisplayed()) {
+         firstArrow = arrow;
+         break;
+     }
+ }
+
+ if (firstArrow == null) {
+     throw new RuntimeException("❌ No visible expand arrow found!");
+ }
+
+ ShadowDom.scrollIntoViewCenter(driver, firstArrow);
+ ShadowDom.jsClick(driver, firstArrow);
+
+ Thread.sleep(2000);
+
+ logger.info("✅ Level 1 expanded (simple)");
+}
+//============================================================
+//LEVEL 2 – Expand SEEBURGER (INDEX MATCHING VERSION)
+//============================================================
+
+//============================================================
+//EXPAND FIRST TRANSACTION + SEEBURGER (HOUSE BILL SAFE)
+//DOES NOT TOUCH ANY EXISTING METHOD
+//============================================================
+
+public void expandFirstSeeburgerForHouseBill() throws InterruptedException {
+
+ logger.info("⬇ Expanding FIRST transaction (Level 1)...");
+
+ // ---- LEVEL 1 ----
+ List<WebElement> level1Arrows =
+         ShadowDom.findAllDeep(
+                 driver,
+                 "button[aria-label='Expand row']",
+                 logger);
+
+ if (level1Arrows == null || level1Arrows.isEmpty()) {
+     throw new RuntimeException("❌ No Level 1 arrows found!");
+ }
+
+ WebElement firstArrow = level1Arrows.get(0);
+
+ ShadowDom.scrollIntoViewCenter(driver, firstArrow);
+ ShadowDom.jsClick(driver, firstArrow);
+
+ Thread.sleep(2000);
+
+ logger.info("✅ Level 1 expanded");
+
+
+ // ---- LEVEL 2 (SEEBURGER) ----
+ logger.info("⬇ Expanding SEEBURGER (Level 2)...");
+
+ List<WebElement> platformCells =
+         ShadowDom.findAllDeep(
+                 driver,
+                 "td[data-header-id='systemName'] span.system-name",
+                 logger);
+
+ for (WebElement cell : platformCells) {
+
+     if (cell.getText().trim().equalsIgnoreCase("SEEBURGER")) {
+
+         logger.info("✅ Found SEEBURGER row");
+
+         // Move to its row
+         WebElement row = (WebElement) ((JavascriptExecutor) driver)
+                 .executeScript("return arguments[0].closest('tr');", cell);
+
+         // Find expand button in that row (LEFT column)
+         List<WebElement> rowButtons =
+                 row.findElements(By.cssSelector("button"));
+
+         for (WebElement btn : rowButtons) {
+
+             String aria = btn.getAttribute("aria-label");
+
+             if (aria != null && aria.equalsIgnoreCase("Expand row")) {
+
+                 ShadowDom.scrollIntoViewCenter(driver, btn);
+                 ShadowDom.jsClick(driver, btn);
+
+                 Thread.sleep(2000);
+
+                 logger.info("✅ SEEBURGER Level 2 expanded");
+                 return;
+             }
+         }
+     }
+ }
+
+ throw new RuntimeException("❌ SEEBURGER Level 2 arrow not found!");
+}
+///============================================================
+// EXPAND FIRST RECORD + SEEBURGER (FINAL STABLE VERSION)
+//============================================================
+
+public void expandFirstSeeburgerFinal() throws InterruptedException {
+
+    logger.info("⬇ Expanding FIRST transaction (HouseBill)...");
+
+    // Get all expand arrows
+    List<WebElement> arrows =
+            ShadowDom.findAllDeep(
+                    driver,
+                    "button[aria-label='Expand row']",
+                    logger);
+
+    if (arrows == null || arrows.size() < 2) {
+        throw new RuntimeException("❌ Not enough expand arrows found!");
+    }
+
+    // LEVEL 1
+    WebElement level1Arrow = arrows.get(0);
+    ShadowDom.scrollIntoViewCenter(driver, level1Arrow);
+    ShadowDom.jsClick(driver, level1Arrow);
+
+    Thread.sleep(2000);
+    logger.info("✅ Level 1 expanded");
+
+
+    // Refresh arrows after expansion
+    arrows =
+            ShadowDom.findAllDeep(
+                    driver,
+                    "button[aria-label='Expand row']",
+                    logger);
+
+    if (arrows.size() < 2) {
+        throw new RuntimeException("❌ Level 2 arrow not found!");
+    }
+
+    // LEVEL 2 (SEEBURGER is always next arrow in first transaction)
+    WebElement level2Arrow = arrows.get(1);
+
+    ShadowDom.scrollIntoViewCenter(driver, level2Arrow);
+    ShadowDom.jsClick(driver, level2Arrow);
+
+    Thread.sleep(2000);
+
+    logger.info("✅ SEEBURGER expanded successfully");
+}
+public void expandFirstRowThenSeeburger() throws InterruptedException {
+
+    logger.info("==================================================");
+    logger.info("⬇ Expanding First Transaction → SEEBURGER Only");
+    logger.info("==================================================");
+
+    // ------------------------------------------------------------
+    // STEP 1: Expand FIRST TRANSACTION (Level 1)
+    // ------------------------------------------------------------
+
+    List<WebElement> level1Arrows =
+            ShadowDom.findAllDeep(
+                    driver,
+                    ANY_EXPAND_BUTTON_DEEP,
+                    logger);
+
+    if (level1Arrows == null || level1Arrows.isEmpty()) {
+        throw new RuntimeException("❌ No Level 1 arrows found!");
+    }
+
+    WebElement level1Arrow = level1Arrows.get(0);
+
+    logger.info("⬇ Expanding Level 1 (First Transaction)");
+
+    ShadowDom.scrollIntoViewCenter(driver, level1Arrow);
+    ShadowDom.jsClick(driver, level1Arrow);
+
+    Thread.sleep(2000);
+
+    // ------------------------------------------------------------
+    // STEP 2: Find SEEBURGER row (normal DOM)
+    // ------------------------------------------------------------
+
+    List<WebElement> systemCells =
+            ShadowDom.findAllDeep(
+                    driver,
+                    "td[data-header-id='systemName'] span.system-name",
+                    logger);
+
+    for (WebElement system : systemCells) {
+
+        if (system.getText().trim().equalsIgnoreCase("SEEBURGER")) {
+
+            logger.info("✅ SEEBURGER row found");
+
+            WebElement platformRow = (WebElement) ((JavascriptExecutor) driver)
+                    .executeScript("return arguments[0].closest('tr');", system);
+
+            // ------------------------------------------------------------
+            // STEP 3: Find Level-2 arrow INSIDE that row using Deep Search
+            // ------------------------------------------------------------
+
+            List<WebElement> level2Arrows =
+                    ShadowDom.findAllDeep(
+                            driver,
+                            platformRow,
+                            "button[aria-label='Expand row']",
+                            logger);
+
+            if (level2Arrows == null || level2Arrows.isEmpty()) {
+                throw new RuntimeException("❌ Level 2 arrow not found inside SEEBURGER row!");
+            }
+
+            WebElement level2Arrow = level2Arrows.get(0);
+
+            logger.info("⬇ Expanding Level 2 (SEEBURGER)");
+
+            ShadowDom.scrollIntoViewCenter(driver, level2Arrow);
+            ShadowDom.jsClick(driver, level2Arrow);
+
+            Thread.sleep(2000);
+
+            logger.info("✅ SEEBURGER expansion completed.");
+            logger.info("==================================================");
+            return;
+        }
+    }
+
+    throw new RuntimeException("❌ SEEBURGER row not found!");
+}
 }
