@@ -205,7 +205,7 @@ public void expandToFinalLevelForSeeburger(String platformName) throws Interrupt
 //SEEBURGER EXPANSION USING INDEX (STABLE)
 //============================================================
 
-public void expandSeeburgerByIndex() throws InterruptedException {
+public void expandSeeburgerByIndexN() throws InterruptedException {
 
     List<WebElement> arrows =
             ShadowDom.findAllDeep(
@@ -605,5 +605,110 @@ public void expandFirstRowThenSeeburger() throws InterruptedException {
     }
 
     throw new RuntimeException("❌ SEEBURGER row not found!");
+}
+public void expandSeeburgerByIndex() throws InterruptedException {
+
+    logger.info("==================================================");
+    logger.info("⬇ Expanding Transaction → SEEBURGER");
+    logger.info("==================================================");
+
+    // -------------------------------------------------
+    // STEP 1: Expand Level 1 (Transaction)
+    // -------------------------------------------------
+
+    List<WebElement> arrows =
+            ShadowDom.findAllDeep(driver, ANY_EXPAND_BUTTON_DEEP, logger);
+
+    if (arrows == null || arrows.isEmpty()) {
+        throw new RuntimeException("❌ No expand arrows found!");
+    }
+
+    WebElement firstArrow = arrows.get(0);
+
+    logger.info("⬇ Expanding Level 1 (Transaction)");
+
+    ShadowDom.scrollIntoViewCenter(driver, firstArrow);
+    ShadowDom.jsClick(driver, firstArrow);
+
+    Thread.sleep(2000);
+
+    // -------------------------------------------------
+    // STEP 2: Get all platform rows after expansion
+    // -------------------------------------------------
+
+    List<WebElement> platforms =
+            ShadowDom.findAllDeep(
+                    driver,
+                    "td[data-header-id='systemName'] span.system-name",
+                    logger);
+
+    if (platforms == null || platforms.isEmpty()) {
+        throw new RuntimeException("❌ No platform rows found after expansion!");
+    }
+
+    logger.info("🧠 Platforms detected: " + platforms.size());
+
+    // -------------------------------------------------
+    // SCENARIO 1: Only one platform (SEEBURGER)
+    // -------------------------------------------------
+
+    if (platforms.size() == 1) {
+
+        logger.info("⬇ Single platform detected → Expanding index 1");
+
+        arrows = ShadowDom.findAllDeep(driver, ANY_EXPAND_BUTTON_DEEP, logger);
+
+        if (arrows.size() < 2) {
+            throw new RuntimeException("❌ Second level arrow not found!");
+        }
+
+        WebElement secondArrow = arrows.get(1);
+
+        ShadowDom.scrollIntoViewCenter(driver, secondArrow);
+        ShadowDom.jsClick(driver, secondArrow);
+
+        Thread.sleep(2000);
+
+        logger.info("✅ SEEBURGER expansion completed (Single Platform)");
+        return;
+    }
+
+    // -------------------------------------------------
+    // SCENARIO 2: Multiple platforms (AMPS + SEEBURGER)
+    // -------------------------------------------------
+
+    for (WebElement platform : platforms) {
+
+        if (platform.getText().trim().equalsIgnoreCase("SEEBURGER")) {
+
+            logger.info("⬇ SEEBURGER detected → Expanding correct row");
+
+            WebElement platformRow = (WebElement) ((JavascriptExecutor) driver)
+                    .executeScript("return arguments[0].closest('tr');", platform);
+
+            List<WebElement> level2Arrows =
+                    ShadowDom.findAllDeep(
+                            driver,
+                            platformRow,
+                            "button[aria-label='Expand row']",
+                            logger);
+
+            if (level2Arrows == null || level2Arrows.isEmpty()) {
+                throw new RuntimeException("❌ SEEBURGER expand arrow not found!");
+            }
+
+            WebElement level2Arrow = level2Arrows.get(0);
+
+            ShadowDom.scrollIntoViewCenter(driver, level2Arrow);
+            ShadowDom.jsClick(driver, level2Arrow);
+
+            Thread.sleep(2000);
+
+            logger.info("✅ SEEBURGER expansion completed (Multiple Platforms)");
+            return;
+        }
+    }
+
+    throw new RuntimeException("❌ SEEBURGER platform not found!");
 }
 }

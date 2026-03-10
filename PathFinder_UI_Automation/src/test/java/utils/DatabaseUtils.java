@@ -37,7 +37,7 @@ public class DatabaseUtils {
                 "WHERE platform_identifier IS NOT NULL " +
                 "AND origin_system = 'AMPS' " +
                 "ORDER BY log_created_time DESC " +
-                "LIMIT 5";
+                "LIMIT 1";
 
         String seeburgerQuery =
                 "SELECT platform_identifier, status, origin_system " +
