@@ -4,6 +4,7 @@ import org.openqa.selenium.WebDriver;
 import java.util.Properties;
 
 public class TestContext {
+
     private WebDriver driver;
     private Properties properties;
 

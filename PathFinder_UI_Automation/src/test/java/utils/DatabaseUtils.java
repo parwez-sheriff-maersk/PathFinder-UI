@@ -146,11 +146,12 @@ public class DatabaseUtils {
                 "SELECT bi ->> 'value' AS identifier_value, " +
                 "       p.origin_system, " +
                 "       p.status, " +
-                "       p.log_created_time " +
+                "       p.log_created_time, " +
+                "       p.trace_id " +
                 "FROM path_finder_log p " +
                 "CROSS JOIN LATERAL jsonb_array_elements(p.business_identifiers) AS bi " +
                 "WHERE p.origin_system = 'AMPS' " +
-                "  AND bi ->> 'name' = 'BOOKING NUMBER' " +
+                "  AND UPPER(bi ->> 'name') = 'BOOKING NUMBER' " +
                 "ORDER BY p.log_created_time DESC " +
                 "LIMIT 5";
 

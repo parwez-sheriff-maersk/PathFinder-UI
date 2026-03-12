@@ -1,3 +1,4 @@
+@ALL
 Feature: BusinessIdentifier-Booking status and error message validation in Pathfinder
 
   Background:
@@ -5,4 +6,4 @@ Feature: BusinessIdentifier-Booking status and error message validation in Pathf
     When User sign in with environment credentials
 
   Scenario: Validate PlatformIdentifier statuses and error message
-    Then User validates BusinessIdentifier- Booking
+    Then User validates BusinessIdentifier- Booking Number

@@ -1,3 +1,4 @@
+@ALL
 Feature: BusinessIdentifier-House Bill Of Lading status and error message validation in Pathfinder
 
   Background:
