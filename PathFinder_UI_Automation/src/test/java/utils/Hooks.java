@@ -74,6 +74,22 @@ public class Hooks {
             ExtentTest test = ExtentTestManager.getTest();
             WebDriver driver = testContext.getDriver();
 
+            boolean isPassed = !scenario.isFailed();
+
+            // ========================================================
+            // 🔥 NEW: TRACK FEATURE-WISE RESULTS (ADDED)
+            // ========================================================
+
+            String featureName = scenario.getUri() != null
+                    ? scenario.getUri().toString()
+                    : "Unknown Feature";
+
+            ExtentManager.trackResult(featureName, isPassed);
+
+            // ========================================================
+            // EXISTING STATUS LOGIC (UNCHANGED)
+            // ========================================================
+
             if (scenario.isFailed()) {
 
                 test.fail("❌ Scenario Failed");
@@ -105,7 +121,12 @@ public class Hooks {
             e.printStackTrace();
         } finally {
 
-            // Flush report
+            // ========================================================
+            // 🔥 NEW: ADD ENTERPRISE DASHBOARD (ADDED)
+            // ========================================================
+            ExtentManager.addDashboard();
+
+            // Flush report (EXISTING — UNCHANGED)
             ExtentManager.getInstance().flush();
 
             // ===== EXISTING DRIVER QUIT (UNCHANGED) =====

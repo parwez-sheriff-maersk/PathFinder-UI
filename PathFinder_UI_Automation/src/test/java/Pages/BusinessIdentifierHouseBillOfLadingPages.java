@@ -81,7 +81,6 @@ public class BusinessIdentifierHouseBillOfLadingPages {
 
         logger.info("📦 Total records fetched: " + records.size());
 
-        // ✅ Create once (not inside loop)
         ExpandDownArrows expander = new ExpandDownArrows(driver);
         StatusValidation statusValidation = new StatusValidation(driver);
 
@@ -94,6 +93,7 @@ public class BusinessIdentifierHouseBillOfLadingPages {
             PlatformRecord record = records.get(i);
 
             String houseBillValue = record.getPlatformId();
+            String transactionId  = record.getTraceId();   // 🔥 Transaction ID from DB
             String expectedStatus =
                     StatusMapper.mapDbToUiStatus(
                             record.getDbStatus(),
@@ -102,27 +102,42 @@ public class BusinessIdentifierHouseBillOfLadingPages {
             logger.info("==================================================");
             logger.info("🔎 Validating Record " + (i + 1));
             logger.info("📌 House Bill      : " + houseBillValue);
+            logger.info("📌 Transaction ID  : " + transactionId);
             logger.info("📌 DB Status       : " + record.getDbStatus());
             logger.info("📌 Expected UI Map : " + expectedStatus);
-            logger.info("📌 Trace ID        : " + record.getTraceId());
             logger.info("==================================================");
 
             // --------------------------------------------------------
-            // ENTER VALUE
+            // ENTER BUSINESS IDENTIFIER VALUE
             // --------------------------------------------------------
 
-            WebElement valueHost =
-                    wait.until(ExpectedConditions.presenceOfElementLocated(
+            List<WebElement> allInputs =
+                    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
                             By.cssSelector("mc-input.inline-input")));
 
-            SearchContext shadow = valueHost.getShadowRoot();
-            WebElement valueInput =
-                    shadow.findElement(By.cssSelector("input"));
+            // 0 = Business Identifier Value field
+            WebElement biHost = allInputs.get(0);
+            SearchContext biShadow = biHost.getShadowRoot();
+            WebElement biInput = biShadow.findElement(By.cssSelector("input"));
 
-            InputClearFeild.safeClearAndFocus(driver, valueInput);
+            InputClearFeild.safeClearAndFocus(driver, biInput);
+            biInput.sendKeys(houseBillValue);
+            biInput.sendKeys(Keys.TAB);
 
-            valueInput.sendKeys(houseBillValue);
-            valueInput.sendKeys(Keys.TAB);
+            Thread.sleep(1000);
+
+            // --------------------------------------------------------
+            // 🔥 NEW LOGIC: ENTER TRANSACTION IDENTIFIER
+            // --------------------------------------------------------
+
+            // 1 = Transaction Identifier field
+            WebElement txnHost = allInputs.get(1);
+            SearchContext txnShadow = txnHost.getShadowRoot();
+            WebElement txnInput = txnShadow.findElement(By.cssSelector("input"));
+
+            InputClearFeild.safeClearAndFocus(driver, txnInput);
+            txnInput.sendKeys(transactionId);
+            txnInput.sendKeys(Keys.TAB);
 
             Thread.sleep(1000);
 
@@ -142,20 +157,20 @@ public class BusinessIdentifierHouseBillOfLadingPages {
             Thread.sleep(3000);
 
             // --------------------------------------------------------
-            // EXPAND USING EXISTING WORKING METHOD
+            // EXPAND (EXISTING WORKING LOGIC)
             // --------------------------------------------------------
 
             expander.expandFirstRowThenSeeburger();
 
             // --------------------------------------------------------
-            // VALIDATE USING EXISTING WORKING METHOD
+            // VALIDATE (EXISTING WORKING LOGIC)
             // --------------------------------------------------------
 
             statusValidation.validateStatusWithLogging(
                     "SEEBURGER",
                     expectedStatus,
                     houseBillValue,
-                    record.getTraceId(),
+                    transactionId,
                     record.getDbStatus()
             );
 

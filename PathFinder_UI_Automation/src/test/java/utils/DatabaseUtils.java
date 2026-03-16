@@ -24,7 +24,7 @@ public class DatabaseUtils {
     }
 
     // ============================================================
-    // LATEST 5 PLATFORM IDENTIFIERS (AMPS + SEEBURGER)
+    // LATEST PLATFORM IDENTIFIERS (AMPS + SEEBURGER)
     // ============================================================
 
     public static List<PlatformRecord> getLatestPlatformIdentifiers(Properties prop) {
@@ -37,7 +37,7 @@ public class DatabaseUtils {
                 "WHERE platform_identifier IS NOT NULL " +
                 "AND origin_system = 'AMPS' " +
                 "ORDER BY log_created_time DESC " +
-                "LIMIT 1";
+                "LIMIT 5";
 
         String seeburgerQuery =
                 "SELECT platform_identifier, status, origin_system " +
@@ -88,7 +88,7 @@ public class DatabaseUtils {
     }
 
     // ============================================================
-    // LATEST 5 HOUSE BILL OF LADING (SEEBURGER)
+    // LATEST HOUSE BILL OF LADING (SEEBURGER)
     // ============================================================
 
     public static List<PlatformRecord> getLatestHouseBillOfLadingSeeburger(Properties prop) {
@@ -106,7 +106,7 @@ public class DatabaseUtils {
                 "WHERE p.origin_system = 'SEEBURGER' " +
                 "  AND bi ->> 'name' = 'HOUSE BILL OF LADING' " +
                 "ORDER BY p.log_created_time DESC " +
-                "LIMIT 5";
+                "LIMIT 5";   // 🔥 Only latest record
 
         try (Connection con = getConnection(prop);
              PreparedStatement pstmt = con.prepareStatement(query);
@@ -123,19 +123,19 @@ public class DatabaseUtils {
             }
 
             System.out.println("====================================");
-            System.out.println("✅ SEEBURGER HOUSE BOL Records: " + records.size());
+            System.out.println("✅ Latest SEEBURGER House Bill Record Fetched");
             System.out.println("====================================");
 
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("❌ DB Error while fetching House Bill records");
+            throw new RuntimeException("❌ DB Error while fetching House Bill record");
         }
 
         return records;
     }
 
     // ============================================================
-    // LATEST 5 BOOKING NUMBER (AMPS)
+    // LATEST BOOKING NUMBER (AMPS)
     // ============================================================
 
     public static List<PlatformRecord> getLatestBookingNumberAmps(Properties prop) {
@@ -164,7 +164,8 @@ public class DatabaseUtils {
                 records.add(new PlatformRecord(
                         rs.getString("identifier_value"),
                         rs.getString("status"),
-                        rs.getString("origin_system")
+                        rs.getString("origin_system"),
+                        rs.getString("trace_id")
                 ));
             }
 

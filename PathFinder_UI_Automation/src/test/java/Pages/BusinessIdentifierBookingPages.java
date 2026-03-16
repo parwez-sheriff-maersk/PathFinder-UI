@@ -48,7 +48,6 @@ public class BusinessIdentifierBookingPages {
 
         logger.info("✅ Trace Table Tab clicked");
 
-        // Wait until dropdown appears (table fully loaded)
         wait.until(ExpectedConditions.presenceOfElementLocated(
                 By.cssSelector("mc-select")));
 
@@ -65,55 +64,7 @@ public class BusinessIdentifierBookingPages {
         logger.info("🚀 BOOKING NUMBER VALIDATION STARTED");
         logger.info("==================================================");
 
-        // ------------------------------------------------------------
-        // OPEN BUSINESS IDENTIFIER DROPDOWN
-        // ------------------------------------------------------------
-
-        WebElement dropdown =
-                wait.until(ExpectedConditions.elementToBeClickable(
-                        By.cssSelector("mc-select")));
-
-        dropdown.click();
-        Thread.sleep(1500);
-
-        // ------------------------------------------------------------
-        // SELECT BOOKING NUMBER (EXACT MATCH)
-        // ------------------------------------------------------------
-
-        List<WebElement> options =
-                ShadowDom.findAllDeep(driver, "mc-option", logger);
-
-        boolean found = false;
-
-        for (WebElement option : options) {
-
-            String text = option.getText()
-                    .trim()
-                    .replaceAll("\\s+", " ");
-
-            if (text.equalsIgnoreCase("BOOKING NUMBER")) {
-
-                logger.info("🎯 Exact match found: " + text);
-
-                ShadowDom.scrollIntoViewCenter(driver, option);
-                Thread.sleep(800);
-                ShadowDom.jsClick(driver, option);
-
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            throw new RuntimeException("❌ Exact 'BOOKING NUMBER' option not found in dropdown!");
-        }
-
-        Thread.sleep(2000);
-        logger.info("✅ BOOKING NUMBER selected successfully");
-
-        // ------------------------------------------------------------
-        // FETCH LATEST 5 FROM DB
-        // ------------------------------------------------------------
+        selectBookingFromDropdown();
 
         List<PlatformRecord> records =
                 DatabaseUtils.getLatestBookingNumberAmps(prop);
@@ -129,121 +80,141 @@ public class BusinessIdentifierBookingPages {
 
         String lastSearchedBooking = "";
 
-        // ------------------------------------------------------------
-        // LOOP THROUGH EACH RECORD
-        // ------------------------------------------------------------
-
-        for (int i = 0; i < records.size(); i++) {
-
-            PlatformRecord record = records.get(i);
+        for (PlatformRecord record : records) {
 
             String bookingValue = record.getPlatformId();
+            String traceId = record.getTraceId();
+            String dbRawStatus = record.getDbStatus();
+            String originSystem = record.getOriginSystem();
 
             String expectedStatus =
                     StatusMapper.mapDbToUiStatus(
-                            record.getDbStatus(),
-                            record.getOriginSystem());
+                            dbRawStatus,
+                            originSystem);
 
-            logger.info("==================================================");
-            logger.info("🔎 Validating Record " + (i + 1));
+            logger.info("--------------------------------------------------");
             logger.info("📌 Booking Number  : " + bookingValue);
-            logger.info("📌 DB Status       : " + record.getDbStatus());
+            logger.info("📌 Trace ID        : " + traceId);
+            logger.info("📌 DB Status       : " + dbRawStatus);
             logger.info("📌 Expected UI Map : " + expectedStatus);
-            logger.info("==================================================");
+            logger.info("--------------------------------------------------");
 
-            // --------------------------------------------------------
-            // ENTER VALUE
-            // --------------------------------------------------------
+            if (bookingValue.equals(lastSearchedBooking)) {
 
-            WebElement valueHost =
-                    wait.until(ExpectedConditions.presenceOfElementLocated(
-                            By.cssSelector("mc-input.inline-input")));
+                logger.info("⚠ Duplicate booking detected → Performing refresh flow");
 
-            SearchContext shadow = valueHost.getShadowRoot();
-            WebElement valueInput =
-                    shadow.findElement(By.cssSelector("input"));
+                driver.navigate().refresh();
+                Thread.sleep(4000);
 
-            InputClearFeild.safeClearAndFocus(driver, valueInput);
-
-            valueInput.sendKeys(bookingValue);
-            valueInput.sendKeys(Keys.TAB);
-
-            Thread.sleep(1000);
-
-            // --------------------------------------------------------
-            // CLICK SEARCH (Skip wait if same booking)
-            // --------------------------------------------------------
-
-            if (!bookingValue.equals(lastSearchedBooking)) {
-
-                WebElement searchBtn =
-                        ShadowDom.waitForInnerClickable(
-                                driver,
-                                SEARCH_BTN_HOST,
-                                SEARCH_BTN,
-                                20,
-                                logger);
-
-                ShadowDom.jsClick(driver, searchBtn);
-
-                logger.info("🔎 Search clicked. Waiting for table data...");
-
-                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-
-                wait.until(d -> {
-                    List<WebElement> arrows =
-                            ShadowDom.findAllDeep(driver,
-                                    ANY_EXPAND_BUTTON_DEEP,
-                                    logger);
-                    return arrows != null && arrows.size() > 0;
-                });
-
-                logger.info("✅ Table ready for expansion");
+                clickTraceTableTab();
+                selectBookingFromDropdown();
+                enterBookingAndSearch(bookingValue);
 
             } else {
-                logger.info("⚠ Same booking detected. Skipping refresh wait.");
+
+                enterBookingAndSearch(bookingValue);
             }
 
             lastSearchedBooking = bookingValue;
 
-            // --------------------------------------------------------
-            // WAIT 5 SECONDS BEFORE EXPANSION (UI SLOW SAFETY)
-            // --------------------------------------------------------
-
             Thread.sleep(5000);
-
-            // --------------------------------------------------------
-            // EXPAND → AMPS
-            // --------------------------------------------------------
 
             expander.expandFirstRowThenAmps();
 
-            // --------------------------------------------------------
-            // VALIDATE AMPS
-            // --------------------------------------------------------
-
-            statusValidation.validateStatusForPlatform(
+            statusValidation.validatePlatformStatus(
                     "AMPS",
-                    expectedStatus
+                    expectedStatus,
+                    bookingValue,
+                    traceId,
+                    dbRawStatus
             );
 
             logger.info("✅ AMPS validation completed successfully.");
 
             Thread.sleep(2000);
-
-            // --------------------------------------------------------
-            // OPTIONAL: REFRESH PAGE FOR STABILITY
-            // --------------------------------------------------------
-
-            driver.navigate().refresh();
-            Thread.sleep(4000);
-
-            // Re-open Trace Table after refresh
-            clickTraceTableTab();
         }
 
         logger.info("==================================================");
         logger.info("🎉 BOOKING NUMBER VALIDATION COMPLETED");
         logger.info("==================================================");
+    }
+
+    // ============================================================
+    // SELECT BOOKING FROM DROPDOWN
+    // ============================================================
+
+    private void selectBookingFromDropdown() throws InterruptedException {
+
+        WebElement dropdown =
+                wait.until(ExpectedConditions.elementToBeClickable(
+                        By.cssSelector("mc-select")));
+
+        dropdown.click();
+        Thread.sleep(1500);
+
+        List<WebElement> options =
+                ShadowDom.findAllDeep(driver, "mc-option", logger);
+
+        for (WebElement option : options) {
+
+            String text = option.getText()
+                    .trim()
+                    .replaceAll("\\s+", " ");
+
+            if (text.equalsIgnoreCase("BOOKING NUMBER")) {
+
+                ShadowDom.scrollIntoViewCenter(driver, option);
+                Thread.sleep(800);
+                ShadowDom.jsClick(driver, option);
+                break;
+            }
+        }
+
+        Thread.sleep(2000);
+        logger.info("✅ BOOKING NUMBER selected successfully");
+    }
+
+    // ============================================================
+    // ENTER BOOKING + CLICK SEARCH
+    // ============================================================
+
+    private void enterBookingAndSearch(String bookingValue) throws InterruptedException {
+
+        WebElement valueHost =
+                wait.until(ExpectedConditions.presenceOfElementLocated(
+                        By.cssSelector("mc-input.inline-input")));
+
+        SearchContext shadow = valueHost.getShadowRoot();
+        WebElement valueInput =
+                shadow.findElement(By.cssSelector("input"));
+
+        InputClearFeild.safeClearAndFocus(driver, valueInput);
+
+        valueInput.sendKeys(bookingValue);
+        valueInput.sendKeys(Keys.TAB);
+
+        Thread.sleep(1000);
+
+        WebElement searchBtn =
+                ShadowDom.waitForInnerClickable(
+                        driver,
+                        SEARCH_BTN_HOST,
+                        SEARCH_BTN,
+                        20,
+                        logger);
+
+        ShadowDom.jsClick(driver, searchBtn);
+
+        logger.info("🔎 Search clicked. Waiting for table data...");
+
+        wait.until(d -> {
+            List<WebElement> arrows =
+                    ShadowDom.findAllDeep(driver,
+                            ANY_EXPAND_BUTTON_DEEP,
+                            logger);
+            return arrows != null && arrows.size() > 0;
+        });
+
+        logger.info("✅ Table ready for expansion");
     }
 }

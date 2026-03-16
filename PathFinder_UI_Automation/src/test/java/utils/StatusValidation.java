@@ -2,13 +2,11 @@ package utils;
 
 import static Pages.PathFinderLocators.*;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.logging.Logger;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import com.aventstack.extentreports.ExtentTest;
 
@@ -22,7 +20,110 @@ public class StatusValidation {
     }
 
     // ============================================================
-    // COMMON DB TABLE ATTACHMENT (NEW - USED EVERYWHERE)
+    // 🔹 MAIN UNIFIED VALIDATION METHOD
+    // ============================================================
+
+    public void validatePlatformStatus(String platformName,
+                                       String expectedUiStatus,
+                                       String identifierValue,
+                                       String traceId,
+                                       String dbRawStatus) {
+
+        ExtentTest test = ExtentTestManager.getTest();
+
+        identifierValue = safeValue(identifierValue);
+        traceId = safeValue(traceId);
+        dbRawStatus = safeValue(dbRawStatus);
+
+        // Attach DB table
+        attachDbTable(platformName,
+                identifierValue,
+                traceId,
+                dbRawStatus,
+                expectedUiStatus);
+
+        // 🔥 Attach JSON (now properly called)
+        attachDbJson(platformName,
+                identifierValue,
+                traceId,
+                dbRawStatus,
+                platformName);
+
+        List<WebElement> systemCells =
+                ShadowDom.findAllDeep(
+                        driver,
+                        "td[data-header-id='systemName'] span.system-name",
+                        logger);
+
+        if (systemCells == null || systemCells.isEmpty()) {
+            failTest("❌ No platform rows found!", test);
+        }
+
+        for (WebElement system : systemCells) {
+
+            if (!system.isDisplayed()) continue;
+
+            String platformText = system.getText().trim();
+
+            if (platformText.equalsIgnoreCase(platformName)) {
+
+                List<WebElement> statusCells =
+                        ShadowDom.findAllDeep(driver, STATUS_CELL_DEEP, logger);
+
+                String finalUiStatus = deriveFinalStatus(statusCells);
+
+                if (!finalUiStatus.equalsIgnoreCase(expectedUiStatus)) {
+                    failTest("❌ STATUS MISMATCH → Platform: "
+                            + platformName
+                            + " | Expected: "
+                            + expectedUiStatus
+                            + " | Actual: "
+                            + finalUiStatus, test);
+                }
+
+                if (test != null)
+                    test.pass("Platform Status Matched: " + finalUiStatus);
+
+                return;
+            }
+        }
+
+        failTest("❌ Platform not found: " + platformName, test);
+    }
+
+    // ============================================================
+    // 🔹 BACKWARD COMPATIBILITY METHODS
+    // ============================================================
+
+    public void validateStatusForPlatform(String platformName,
+                                          String expectedUiStatus) {
+
+        validatePlatformStatus(
+                platformName,
+                expectedUiStatus,
+                "N/A",
+                "N/A",
+                "N/A"
+        );
+    }
+
+    public void validateStatusWithLogging(String platformName,
+                                          String expectedStatus,
+                                          String identifierValue,
+                                          String traceId,
+                                          String dbRawStatus) {
+
+        validatePlatformStatus(
+                platformName,
+                expectedStatus,
+                identifierValue,
+                traceId,
+                dbRawStatus
+        );
+    }
+
+    // ============================================================
+    // 🔹 DB TABLE ATTACHMENT
     // ============================================================
 
     private void attachDbTable(String platform,
@@ -49,210 +150,39 @@ public class StatusValidation {
     }
 
     // ============================================================
-    // VALIDATE ONLY VISIBLE STATUS CELLS
+    // 🔹 ATTACH DB RAW JSON TO EXTENT REPORT
     // ============================================================
 
-    public void validateVisibleStatus(String expectedStatus) {
+    private void attachDbJson(String platform,
+                              String identifier,
+                              String traceId,
+                              String dbStatus,
+                              String originSystem) {
 
         ExtentTest test = ExtentTestManager.getTest();
-        if (test != null) test.info("Validating Visible Status Rows");
+        if (test == null) return;
 
-        // DB table attached (generic values if DB not passed)
-        attachDbTable("N/A", "N/A", "N/A", "N/A", expectedStatus);
+        String json =
+                "{\n" +
+                "  \"platform\": \"" + safeValue(platform) + "\",\n" +
+                "  \"identifier\": \"" + safeValue(identifier) + "\",\n" +
+                "  \"traceId\": \"" + safeValue(traceId) + "\",\n" +
+                "  \"dbRawStatus\": \"" + safeValue(dbStatus) + "\",\n" +
+                "  \"originSystem\": \"" + safeValue(originSystem) + "\"\n" +
+                "}";
 
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        String formatted =
+                "<details style='margin-top:8px'>" +
+                "<summary><b>View DB Raw JSON</b></summary>" +
+                "<pre style='background-color:#1e1e1e;color:#dcdcdc;padding:10px;border-radius:5px'>" +
+                json +
+                "</pre></details>";
 
-        wait.until(d ->
-                ShadowDom.findAllDeep(driver, STATUS_CELL_DEEP, logger).size() > 0
-        );
-
-        List<WebElement> statusCells =
-                ShadowDom.findAllDeep(driver, STATUS_CELL_DEEP, logger);
-
-        String finalUiStatus = deriveFinalStatus(statusCells);
-
-        if (!finalUiStatus.equalsIgnoreCase(expectedStatus)) {
-
-            if (test != null) {
-                test.fail("STATUS MISMATCH → Expected: "
-                        + expectedStatus + " | Found: " + finalUiStatus);
-                attachScreenshot(test);
-            }
-
-            throw new AssertionError(
-                    "❌ STATUS MISMATCH → Expected: "
-                            + expectedStatus
-                            + " | Found: "
-                            + finalUiStatus
-            );
-        }
-
-        if (test != null) test.pass("Status Matched: " + finalUiStatus);
+        test.info(formatted);
     }
 
     // ============================================================
-    // VALIDATE AMPS SPECIFIC STATUS
-    // ============================================================
-
-    public void validateVisibleStatusForAmps(String expectedStatus, String selector) {
-
-        ExtentTest test = ExtentTestManager.getTest();
-        if (test != null) test.info("Validating AMPS Expanded Status");
-
-        attachDbTable("AMPS", "N/A", "N/A", "N/A", expectedStatus);
-
-        List<WebElement> statusCells =
-                ShadowDom.findAllDeep(driver, selector, logger);
-
-        if (statusCells == null || statusCells.isEmpty()) {
-
-            if (test != null) {
-                test.fail("No AMPS status cells found!");
-                attachScreenshot(test);
-            }
-
-            throw new AssertionError("❌ No AMPS status cells found!");
-        }
-
-        String finalStatus = null;
-
-        for (WebElement cell : statusCells) {
-            if (!cell.isDisplayed()) continue;
-            String text = cell.getText().trim();
-            if (!text.isEmpty()) finalStatus = text;
-        }
-
-        if (!finalStatus.equalsIgnoreCase(expectedStatus)) {
-
-            if (test != null) {
-                test.fail("AMPS STATUS MISMATCH → Expected: "
-                        + expectedStatus + " | Found: " + finalStatus);
-                attachScreenshot(test);
-            }
-
-            throw new AssertionError(
-                    "❌ AMPS STATUS MISMATCH → Expected: "
-                            + expectedStatus
-                            + " | Found: "
-                            + finalStatus
-            );
-        }
-
-        if (test != null) test.pass("AMPS Status Matched: " + finalStatus);
-    }
-
-    // ============================================================
-    // VALIDATE STATUS WITH FULL DB + UI LOGGING
-    // ============================================================
-
-    public void validateStatusWithLogging(String platformName,
-                                          String expectedStatus,
-                                          String identifierValue,
-                                          String traceId,
-                                          String dbRawStatus) {
-
-        ExtentTest test = ExtentTestManager.getTest();
-
-        // Full DB details table
-        attachDbTable(platformName, identifierValue, traceId, dbRawStatus, expectedStatus);
-
-        List<WebElement> statusCells =
-                ShadowDom.findAllDeep(driver, STATUS_CELL_DEEP, logger);
-
-        String finalUiStatus = deriveFinalStatus(statusCells);
-
-        if (!finalUiStatus.equalsIgnoreCase(expectedStatus)) {
-
-            if (test != null) {
-                test.fail("STATUS MISMATCH → Platform: " + platformName
-                        + " | Expected UI: " + expectedStatus
-                        + " | Actual UI: " + finalUiStatus);
-                attachScreenshot(test);
-            }
-
-            throw new AssertionError(
-                    "❌ STATUS MISMATCH → Platform: " + platformName +
-                            " | Identifier: " + identifierValue +
-                            " | TraceId: " + traceId +
-                            " | DB Status: " + dbRawStatus +
-                            " | Expected UI: " + expectedStatus +
-                            " | Actual UI: " + finalUiStatus
-            );
-        }
-
-        if (test != null) test.pass("Status Matched Successfully: " + finalUiStatus);
-    }
-
-    // ============================================================
-    // VALIDATE STATUS FOR SPECIFIC PLATFORM
-    // ============================================================
-
-    public void validateStatusForPlatform(String platformFromDb,
-                                          String expectedStatus) {
-
-        ExtentTest test = ExtentTestManager.getTest();
-
-        attachDbTable(platformFromDb, "N/A", "N/A", "N/A", expectedStatus);
-
-        List<WebElement> systemCells =
-                ShadowDom.findAllDeep(
-                        driver,
-                        "td[data-header-id='systemName'] span.system-name",
-                        logger);
-
-        if (systemCells == null || systemCells.isEmpty()) {
-
-            if (test != null) {
-                test.fail("Platform rows not found!");
-                attachScreenshot(test);
-            }
-
-            throw new AssertionError("❌ No platform rows found!");
-        }
-
-        for (WebElement system : systemCells) {
-
-            if (!system.isDisplayed()) continue;
-
-            String platformText = system.getText().trim();
-
-            if (platformText.equalsIgnoreCase(platformFromDb)) {
-
-                List<WebElement> statusCells =
-                        ShadowDom.findAllDeep(driver, STATUS_CELL_DEEP, logger);
-
-                String finalUiStatus = deriveFinalStatus(statusCells);
-
-                if (!finalUiStatus.equalsIgnoreCase(expectedStatus)) {
-
-                    if (test != null) {
-                        test.fail("Platform STATUS MISMATCH → Expected: "
-                                + expectedStatus + " | Found: " + finalUiStatus);
-                        attachScreenshot(test);
-                    }
-
-                    throw new AssertionError(
-                            "❌ STATUS MISMATCH → Platform: "
-                                    + platformFromDb
-                                    + " | Expected: "
-                                    + expectedStatus
-                                    + " | Actual: "
-                                    + finalUiStatus
-                    );
-                }
-
-                if (test != null)
-                    test.pass("Platform Status Matched: " + finalUiStatus);
-
-                return;
-            }
-        }
-
-        throw new AssertionError("❌ Platform not found: " + platformFromDb);
-    }
-
-    // ============================================================
-    // COMMON STATUS DERIVATION METHOD (UNCHANGED)
+    // 🔹 STATUS DERIVATION
     // ============================================================
 
     private String deriveFinalStatus(List<WebElement> statusCells) {
@@ -295,7 +225,29 @@ public class StatusValidation {
     }
 
     // ============================================================
-    // COMMON SCREENSHOT METHOD (UNCHANGED)
+    // 🔹 SAFE VALUE HELPER
+    // ============================================================
+
+    private String safeValue(String value) {
+        return (value == null || value.trim().isEmpty()) ? "N/A" : value;
+    }
+
+    // ============================================================
+    // 🔹 FAIL HELPER
+    // ============================================================
+
+    private void failTest(String message, ExtentTest test) {
+
+        if (test != null) {
+            test.fail(message);
+            attachScreenshot(test);
+        }
+
+        throw new AssertionError(message);
+    }
+
+    // ============================================================
+    // 🔹 SCREENSHOT METHOD
     // ============================================================
 
     private void attachScreenshot(ExtentTest test) {
@@ -320,4 +272,35 @@ public class StatusValidation {
             e.printStackTrace();
         }
     }
+ // ============================================================
+ // 🔹 VALIDATE VISIBLE STATUS (BACKWARD SUPPORT)
+ // ============================================================
+
+ public void validateVisibleStatus(String expectedUiStatus) {
+
+     ExtentTest test = ExtentTestManager.getTest();
+
+     if (test != null) {
+         test.info("Validating visible expanded status");
+     }
+
+     List<WebElement> statusCells =
+             ShadowDom.findAllDeep(driver, STATUS_CELL_DEEP, logger);
+
+     if (statusCells == null || statusCells.isEmpty()) {
+         failTest("❌ No status cells found!", test);
+     }
+
+     String finalUiStatus = deriveFinalStatus(statusCells);
+
+     if (!finalUiStatus.equalsIgnoreCase(expectedUiStatus)) {
+         failTest("❌ STATUS MISMATCH → Expected: "
+                 + expectedUiStatus
+                 + " | Actual: "
+                 + finalUiStatus, test);
+     }
+
+     if (test != null)
+         test.pass("Status Matched: " + finalUiStatus);
+ }
 }
