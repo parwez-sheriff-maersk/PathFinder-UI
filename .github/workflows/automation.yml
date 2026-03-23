@@ -89,7 +89,26 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       # ============================================================
-      # 6. Run Tests
+      # 6. Whitelist GitHub Actions IP in Azure PostgreSQL firewall
+      # ============================================================
+      - name: Whitelist GitHub Actions IP in Azure DB
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "Runner IP: $RUNNER_IP"
+          az login --service-principal \
+            -u ${{ secrets.AZURE_CLIENT_ID }} \
+            -p ${{ secrets.AZURE_CLIENT_SECRET }} \
+            --tenant ${{ secrets.AZURE_TENANT_ID }}
+          az postgres flexible-server firewall-rule create \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --name ${{ secrets.AZURE_DB_SERVER_NAME }} \
+            --rule-name github-actions-runner \
+            --start-ip-address $RUNNER_IP \
+            --end-ip-address $RUNNER_IP
+        continue-on-error: true
+
+      # ============================================================
+      # 7. Run Tests
       # ============================================================
       - name: Run Automation Tests
         working-directory: PathFinder_UI_Automation
