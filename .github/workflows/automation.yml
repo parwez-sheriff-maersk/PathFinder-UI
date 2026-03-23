@@ -45,12 +45,16 @@ jobs:
           distribution: 'temurin'
 
       # ============================================================
-      # 3. Verify Chrome is available (pre-installed on ubuntu-latest)
+      # 3. Set up Chrome + matching ChromeDriver (sets CHROMEWEBDRIVER env var)
       # ============================================================
-      - name: Verify Chrome Installation
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+
+      - name: Verify Chrome version
         run: |
-          google-chrome --version || chromium-browser --version
-          which google-chrome || which chromium-browser
+          echo "Chrome: $(google-chrome --version)"
+          echo "ChromeDriver path: $CHROMEWEBDRIVER"
 
       # ============================================================
       # 4. Create config.properties from GitHub Secrets
