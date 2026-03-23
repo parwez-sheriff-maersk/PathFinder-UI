@@ -35,7 +35,7 @@
 <a href="#"><span class="badge badge-primary">PathFinder Automation - Enterprise Dashboard</span></a>
 </li>
 <li class="m-r-10">
-<a href="#"><span class="badge badge-primary">23 Mar 2026 10:46:16 AM</span></a>
+<a href="#"><span class="badge badge-primary">23 Mar 2026 10:49:30 AM</span></a>
 </li>
 </ul>
 </div>
@@ -45,6 +45,16 @@
 <li class="nav-item dropdown" onclick="toggleView('test-view')">
 <a id="nav-test" class="dropdown-toggle" href="#">
 <span class="ico"><i class="fa fa-list"></i></span>
+</a>
+</li>
+<li class="nav-item dropdown" onclick="toggleView('category-view')">
+<a id="nav-category" class="dropdown-toggle" href="#">
+<span class="ico"><i class="fa fa-tag"></i></span>
+</a>
+</li>
+<li class="nav-item dropdown" onclick="toggleView('author-view')">
+<a id="nav-author" class="dropdown-toggle" href="#">
+<span class="ico"><i class="fa fa-user"></i></span>
 </a>
 </li>
 <li class="nav-item dropdown" onclick="toggleView('dashboard-view')">
@@ -67,47 +77,94 @@
 <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-exclamation-circle"></i></a>
 <ul id="status-toggle" class="dropdown-menu dropdown-md p-v-0">
 <a class="dropdown-item" status="pass" href="#"><span>Pass</span><span class="status success"></span></a>
+<a class="dropdown-item" status="fail" href="#"><span>Fail</span><span class="status danger"></span></a>
 <div class="dropdown-divider"></div>
 <a status="clear" class="dropdown-item" href="#"><span>Clear</span><span class="pull-right"><i class="fa fa-close"></i></span></a>
+</ul>
+</li>
+<li class="dropdown">
+<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user"></i></a>
+<ul id="author-toggle" class="dropdown-menu dropdown-md p-v-0">
+<a class="dropdown-item" href="#">ParwezSheriff</a>
+</ul>
+</li>
+<li class="dropdown">
+<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-tag"></i></a>
+<ul id="tag-toggle" class="dropdown-menu dropdown-md p-v-0">
+<a class="dropdown-item" href="#">UIAutomation</a>
 </ul>
 </li>
 </ul>
 </div>    <div class="test-list-wrapper scrollable">
       <ul class="test-list-item">
-        <li class="test-item"  status="pass" test-id="1"
-          author=""
-          tag=""
+        <li class="test-item"  status="fail" test-id="1"
+          author="ParwezSheriff"
+          tag="UIAutomation"
           device="">
           <div class="test-detail">
-            <p class="name">📊 Enterprise Dashboard</p>
+            <p class="name">Validate PlatformIdentifier statuses and error message</p>
             <p class="text-sm">
-              <span>10:46:17 AM</span> / <span>00:00:00:001</span>
-              <span class="badge pass-bg log float-right">Pass</span>
+              <span>10:49:30 AM</span> / <span>00:00:24:058</span>
+              <span class="badge fail-bg log float-right">Fail</span>
             </p>
           </div>
           <div class="test-contents d-none">
 <div class="detail-head">
 <div class="p-v-10">
 <div class="info">
-<h5 class="test-status text-pass">📊 Enterprise Dashboard</h5>
-<span class='badge badge-success'>03.23.2026 10:46:17 AM</span>
-<span class='badge badge-danger'>03.23.2026 10:46:17 AM</span>
-<span class='badge badge-default'>00:00:00:001</span>
+<h5 class="test-status text-fail">Validate PlatformIdentifier statuses and error message</h5>
+<span class='badge badge-success'>03.23.2026 10:49:30 AM</span>
+<span class='badge badge-danger'>03.23.2026 10:49:54 AM</span>
+<span class='badge badge-default'>00:00:24:058</span>
 &middot; <span class='uri-anchor badge badge-default'>#test-id=1</span>
 <span title='Skip to the next failed step' class='badge badge-danger pointer float-right ne ml-1'><i class="fa fa-fast-forward"></i></span>
 <span title='Collapse all nodes' class='badge badge-default pointer float-right ct ml-1'><i class="fa fa-compress"></i></span>
 <span title='Expand all nodes' class='badge badge-default pointer float-right et'><i class="fa fa-expand"></i></span>
 </div>
+<div class="m-t-15"><span class="badge badge-pill badge-default">ParwezSheriff</span>
+<span class="badge badge-pill badge-default">UIAutomation</span></div>
 </div>
-</div><div class="detail-body mt-4">
+</div>    <div class="row mb-3"><div class="col-md-3">
+<img data-featherlight='/home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/test-output/Run_20260323_104930/screenshots/Validate_PlatformIdentifier_statuses_and_error_message_step_failure_20260323_104954.png' src="/home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/test-output/Run_20260323_104930/screenshots/Validate_PlatformIdentifier_statuses_and_error_message_step_failure_20260323_104954.png">
+    <div class="title">Step Failure Screenshot</div>
+    </div></div>
+<div class="detail-body mt-4">
 <table class="table table-sm">
   <thead><tr><th class="status-col">Status</th><th class="timestamp-col">Timestamp</th><th class="details-col">Details</th></tr></thead>
   <tbody>
       <tr class="event-row">
         <td><span class="badge log info-bg">Info</span></td>
-        <td>10:46:17 AM</td>
+        <td>10:49:30 AM</td>
         <td>
-          <style>@keyframes grow { from { width:0%; } to { width:100%; } }</style><div style='padding:20px;background:#1e1e1e;border-radius:10px'><h2 style='color:#00c8ff'>📊 Execution Summary</h2><p>Total Tests: <b>2</b></p><p style='color:#00ff7f'>Passed: 0 (0.00%)</p><p style='color:#ff4c4c'>Failed: 2 (100.00%)</p><div style='width:100%;background:#333;height:30px;border-radius:15px;margin-top:10px'><div style='width:0.0%;background:#00ff7f;height:30px;border-radius:15px;animation: grow 2s ease-in-out;float:left'></div><div style='width:100.0%;background:#ff4c4c;height:30px;border-radius:15px;float:left'></div></div><hr style='margin:20px 0;border-color:#444'><h3 style='color:#00c8ff'>📂 Feature-wise Results</h3></div>
+          Test Started: Validate PlatformIdentifier statuses and error message
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:49:54 AM</td>
+        <td>
+          <b style='color:#ff4c4c'>Step Failed</b>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:49:54 AM</td>
+        <td>
+          <b>Page URL at failure:</b> <a href='https://pathfinder-preprod.maersk-digital.net/trace-table' target='_blank'>https://pathfinder-preprod.maersk-digital.net/trace-table</a>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:49:54 AM</td>
+        <td>
+          <b>Screenshot at failure point:</b>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:49:54 AM</td>
+        <td>
+          <div style='background:#2a0a0a;border-left:4px solid #ff4c4c;padding:12px;border-radius:6px;font-family:monospace;font-size:13px'><b style='color:#ff4c4c'>SCENARIO FAILED</b><br><br><b>Scenario :</b> Validate PlatformIdentifier statuses and error message<br><b>Feature  :</b> file:///home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/src/test/resources/features/BusinessIdentifierBooking.feature<br><b>Status   :</b> FAILED<br></div>
         </td>
       </tr>
   </tbody>
@@ -122,7 +179,7 @@
           <div class="test-detail">
             <p class="name">📊 Enterprise Dashboard</p>
             <p class="text-sm">
-              <span>10:46:17 AM</span> / <span>00:00:00:000</span>
+              <span>10:49:54 AM</span> / <span>00:00:00:000</span>
               <span class="badge pass-bg log float-right">Pass</span>
             </p>
           </div>
@@ -131,8 +188,8 @@
 <div class="p-v-10">
 <div class="info">
 <h5 class="test-status text-pass">📊 Enterprise Dashboard</h5>
-<span class='badge badge-success'>03.23.2026 10:46:17 AM</span>
-<span class='badge badge-danger'>03.23.2026 10:46:17 AM</span>
+<span class='badge badge-success'>03.23.2026 10:49:54 AM</span>
+<span class='badge badge-danger'>03.23.2026 10:49:54 AM</span>
 <span class='badge badge-default'>00:00:00:000</span>
 &middot; <span class='uri-anchor badge badge-default'>#test-id=2</span>
 <span title='Skip to the next failed step' class='badge badge-danger pointer float-right ne ml-1'><i class="fa fa-fast-forward"></i></span>
@@ -146,7 +203,239 @@
   <tbody>
       <tr class="event-row">
         <td><span class="badge log info-bg">Info</span></td>
-        <td>10:46:17 AM</td>
+        <td>10:49:54 AM</td>
+        <td>
+          <style>@keyframes grow { from { width:0%; } to { width:100%; } }</style><div style='padding:20px;background:#1e1e1e;border-radius:10px'><h2 style='color:#00c8ff'>📊 Execution Summary</h2><p>Total Tests: <b>1</b></p><p style='color:#00ff7f'>Passed: 0 (0.00%)</p><p style='color:#ff4c4c'>Failed: 1 (100.00%)</p><div style='width:100%;background:#333;height:30px;border-radius:15px;margin-top:10px'><div style='width:0.0%;background:#00ff7f;height:30px;border-radius:15px;animation: grow 2s ease-in-out;float:left'></div><div style='width:100.0%;background:#ff4c4c;height:30px;border-radius:15px;float:left'></div></div><hr style='margin:20px 0;border-color:#444'><h3 style='color:#00c8ff'>📂 Feature-wise Results</h3></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+</div>
+          </div>
+        </li>
+        <li class="test-item"  status="fail" test-id="3"
+          author="ParwezSheriff"
+          tag="UIAutomation"
+          device="">
+          <div class="test-detail">
+            <p class="name">Validate PlatformIdentifier statuses and error message</p>
+            <p class="text-sm">
+              <span>10:49:54 AM</span> / <span>00:00:23:591</span>
+              <span class="badge fail-bg log float-right">Fail</span>
+            </p>
+          </div>
+          <div class="test-contents d-none">
+<div class="detail-head">
+<div class="p-v-10">
+<div class="info">
+<h5 class="test-status text-fail">Validate PlatformIdentifier statuses and error message</h5>
+<span class='badge badge-success'>03.23.2026 10:49:54 AM</span>
+<span class='badge badge-danger'>03.23.2026 10:50:18 AM</span>
+<span class='badge badge-default'>00:00:23:591</span>
+&middot; <span class='uri-anchor badge badge-default'>#test-id=3</span>
+<span title='Skip to the next failed step' class='badge badge-danger pointer float-right ne ml-1'><i class="fa fa-fast-forward"></i></span>
+<span title='Collapse all nodes' class='badge badge-default pointer float-right ct ml-1'><i class="fa fa-compress"></i></span>
+<span title='Expand all nodes' class='badge badge-default pointer float-right et'><i class="fa fa-expand"></i></span>
+</div>
+<div class="m-t-15"><span class="badge badge-pill badge-default">ParwezSheriff</span>
+<span class="badge badge-pill badge-default">UIAutomation</span></div>
+</div>
+</div>    <div class="row mb-3"><div class="col-md-3">
+<img data-featherlight='/home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/test-output/Run_20260323_104930/screenshots/Validate_PlatformIdentifier_statuses_and_error_message_step_failure_20260323_105018.png' src="/home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/test-output/Run_20260323_104930/screenshots/Validate_PlatformIdentifier_statuses_and_error_message_step_failure_20260323_105018.png">
+    <div class="title">Step Failure Screenshot</div>
+    </div></div>
+<div class="detail-body mt-4">
+<table class="table table-sm">
+  <thead><tr><th class="status-col">Status</th><th class="timestamp-col">Timestamp</th><th class="details-col">Details</th></tr></thead>
+  <tbody>
+      <tr class="event-row">
+        <td><span class="badge log info-bg">Info</span></td>
+        <td>10:49:54 AM</td>
+        <td>
+          Test Started: Validate PlatformIdentifier statuses and error message
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:50:18 AM</td>
+        <td>
+          <b style='color:#ff4c4c'>Step Failed</b>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:50:18 AM</td>
+        <td>
+          <b>Page URL at failure:</b> <a href='https://pathfinder-preprod.maersk-digital.net/trace-table' target='_blank'>https://pathfinder-preprod.maersk-digital.net/trace-table</a>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:50:18 AM</td>
+        <td>
+          <b>Screenshot at failure point:</b>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:50:18 AM</td>
+        <td>
+          <div style='background:#2a0a0a;border-left:4px solid #ff4c4c;padding:12px;border-radius:6px;font-family:monospace;font-size:13px'><b style='color:#ff4c4c'>SCENARIO FAILED</b><br><br><b>Scenario :</b> Validate PlatformIdentifier statuses and error message<br><b>Feature  :</b> file:///home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/src/test/resources/features/BusinessIdentifierHouseBillOfLading.feature<br><b>Status   :</b> FAILED<br></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+</div>
+          </div>
+        </li>
+        <li class="test-item"  status="pass" test-id="4"
+          author=""
+          tag=""
+          device="">
+          <div class="test-detail">
+            <p class="name">📊 Enterprise Dashboard</p>
+            <p class="text-sm">
+              <span>10:50:18 AM</span> / <span>00:00:00:000</span>
+              <span class="badge pass-bg log float-right">Pass</span>
+            </p>
+          </div>
+          <div class="test-contents d-none">
+<div class="detail-head">
+<div class="p-v-10">
+<div class="info">
+<h5 class="test-status text-pass">📊 Enterprise Dashboard</h5>
+<span class='badge badge-success'>03.23.2026 10:50:18 AM</span>
+<span class='badge badge-danger'>03.23.2026 10:50:18 AM</span>
+<span class='badge badge-default'>00:00:00:000</span>
+&middot; <span class='uri-anchor badge badge-default'>#test-id=4</span>
+<span title='Skip to the next failed step' class='badge badge-danger pointer float-right ne ml-1'><i class="fa fa-fast-forward"></i></span>
+<span title='Collapse all nodes' class='badge badge-default pointer float-right ct ml-1'><i class="fa fa-compress"></i></span>
+<span title='Expand all nodes' class='badge badge-default pointer float-right et'><i class="fa fa-expand"></i></span>
+</div>
+</div>
+</div><div class="detail-body mt-4">
+<table class="table table-sm">
+  <thead><tr><th class="status-col">Status</th><th class="timestamp-col">Timestamp</th><th class="details-col">Details</th></tr></thead>
+  <tbody>
+      <tr class="event-row">
+        <td><span class="badge log info-bg">Info</span></td>
+        <td>10:50:18 AM</td>
+        <td>
+          <style>@keyframes grow { from { width:0%; } to { width:100%; } }</style><div style='padding:20px;background:#1e1e1e;border-radius:10px'><h2 style='color:#00c8ff'>📊 Execution Summary</h2><p>Total Tests: <b>2</b></p><p style='color:#00ff7f'>Passed: 0 (0.00%)</p><p style='color:#ff4c4c'>Failed: 2 (100.00%)</p><div style='width:100%;background:#333;height:30px;border-radius:15px;margin-top:10px'><div style='width:0.0%;background:#00ff7f;height:30px;border-radius:15px;animation: grow 2s ease-in-out;float:left'></div><div style='width:100.0%;background:#ff4c4c;height:30px;border-radius:15px;float:left'></div></div><hr style='margin:20px 0;border-color:#444'><h3 style='color:#00c8ff'>📂 Feature-wise Results</h3></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+</div>
+          </div>
+        </li>
+        <li class="test-item"  status="fail" test-id="5"
+          author="ParwezSheriff"
+          tag="UIAutomation"
+          device="">
+          <div class="test-detail">
+            <p class="name">Validate PlatformIdentifier statuses and error message</p>
+            <p class="text-sm">
+              <span>10:50:18 AM</span> / <span>00:00:36:945</span>
+              <span class="badge fail-bg log float-right">Fail</span>
+            </p>
+          </div>
+          <div class="test-contents d-none">
+<div class="detail-head">
+<div class="p-v-10">
+<div class="info">
+<h5 class="test-status text-fail">Validate PlatformIdentifier statuses and error message</h5>
+<span class='badge badge-success'>03.23.2026 10:50:18 AM</span>
+<span class='badge badge-danger'>03.23.2026 10:50:55 AM</span>
+<span class='badge badge-default'>00:00:36:945</span>
+&middot; <span class='uri-anchor badge badge-default'>#test-id=5</span>
+<span title='Skip to the next failed step' class='badge badge-danger pointer float-right ne ml-1'><i class="fa fa-fast-forward"></i></span>
+<span title='Collapse all nodes' class='badge badge-default pointer float-right ct ml-1'><i class="fa fa-compress"></i></span>
+<span title='Expand all nodes' class='badge badge-default pointer float-right et'><i class="fa fa-expand"></i></span>
+</div>
+<div class="m-t-15"><span class="badge badge-pill badge-default">ParwezSheriff</span>
+<span class="badge badge-pill badge-default">UIAutomation</span></div>
+</div>
+</div>    <div class="row mb-3"><div class="col-md-3">
+<img data-featherlight='/home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/test-output/Run_20260323_104930/screenshots/Validate_PlatformIdentifier_statuses_and_error_message_step_failure_20260323_105055.png' src="/home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/test-output/Run_20260323_104930/screenshots/Validate_PlatformIdentifier_statuses_and_error_message_step_failure_20260323_105055.png">
+    <div class="title">Step Failure Screenshot</div>
+    </div></div>
+<div class="detail-body mt-4">
+<table class="table table-sm">
+  <thead><tr><th class="status-col">Status</th><th class="timestamp-col">Timestamp</th><th class="details-col">Details</th></tr></thead>
+  <tbody>
+      <tr class="event-row">
+        <td><span class="badge log info-bg">Info</span></td>
+        <td>10:50:18 AM</td>
+        <td>
+          Test Started: Validate PlatformIdentifier statuses and error message
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:50:55 AM</td>
+        <td>
+          <b style='color:#ff4c4c'>Step Failed</b>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:50:55 AM</td>
+        <td>
+          <b>Page URL at failure:</b> <a href='https://pathfinder-preprod.maersk-digital.net/trace-table' target='_blank'>https://pathfinder-preprod.maersk-digital.net/trace-table</a>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:50:55 AM</td>
+        <td>
+          <b>Screenshot at failure point:</b>
+        </td>
+      </tr>
+      <tr class="event-row">
+        <td><span class="badge log fail-bg">Fail</span></td>
+        <td>10:50:55 AM</td>
+        <td>
+          <div style='background:#2a0a0a;border-left:4px solid #ff4c4c;padding:12px;border-radius:6px;font-family:monospace;font-size:13px'><b style='color:#ff4c4c'>SCENARIO FAILED</b><br><br><b>Scenario :</b> Validate PlatformIdentifier statuses and error message<br><b>Feature  :</b> file:///home/runner/work/PathFinder-UI/PathFinder-UI/PathFinder_UI_Automation/src/test/resources/features/PlatformIdentifierValidation.feature<br><b>Status   :</b> FAILED<br></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+</div>
+          </div>
+        </li>
+        <li class="test-item"  status="pass" test-id="6"
+          author=""
+          tag=""
+          device="">
+          <div class="test-detail">
+            <p class="name">📊 Enterprise Dashboard</p>
+            <p class="text-sm">
+              <span>10:50:55 AM</span> / <span>00:00:00:000</span>
+              <span class="badge pass-bg log float-right">Pass</span>
+            </p>
+          </div>
+          <div class="test-contents d-none">
+<div class="detail-head">
+<div class="p-v-10">
+<div class="info">
+<h5 class="test-status text-pass">📊 Enterprise Dashboard</h5>
+<span class='badge badge-success'>03.23.2026 10:50:55 AM</span>
+<span class='badge badge-danger'>03.23.2026 10:50:55 AM</span>
+<span class='badge badge-default'>00:00:00:000</span>
+&middot; <span class='uri-anchor badge badge-default'>#test-id=6</span>
+<span title='Skip to the next failed step' class='badge badge-danger pointer float-right ne ml-1'><i class="fa fa-fast-forward"></i></span>
+<span title='Collapse all nodes' class='badge badge-default pointer float-right ct ml-1'><i class="fa fa-compress"></i></span>
+<span title='Expand all nodes' class='badge badge-default pointer float-right et'><i class="fa fa-expand"></i></span>
+</div>
+</div>
+</div><div class="detail-body mt-4">
+<table class="table table-sm">
+  <thead><tr><th class="status-col">Status</th><th class="timestamp-col">Timestamp</th><th class="details-col">Details</th></tr></thead>
+  <tbody>
+      <tr class="event-row">
+        <td><span class="badge log info-bg">Info</span></td>
+        <td>10:50:55 AM</td>
         <td>
           <style>@keyframes grow { from { width:0%; } to { width:100%; } }</style><div style='padding:20px;background:#1e1e1e;border-radius:10px'><h2 style='color:#00c8ff'>📊 Execution Summary</h2><p>Total Tests: <b>3</b></p><p style='color:#00ff7f'>Passed: 0 (0.00%)</p><p style='color:#ff4c4c'>Failed: 3 (100.00%)</p><div style='width:100%;background:#333;height:30px;border-radius:15px;margin-top:10px'><div style='width:0.0%;background:#00ff7f;height:30px;border-radius:15px;animation: grow 2s ease-in-out;float:left'></div><div style='width:100.0%;background:#ff4c4c;height:30px;border-radius:15px;float:left'></div></div><hr style='margin:20px 0;border-color:#444'><h3 style='color:#00c8ff'>📂 Feature-wise Results</h3></div>
         </td>
@@ -165,30 +454,156 @@
 </div>
 <div class="test-content-detail"><div class="detail-body"></div></div>
 </div></div>
-<div class="container-fluid p-4 view dashboard-view">
+<div class="test-wrapper row view category-view attributes-view">
+<div class="test-list">
+<div class="test-list-tools">
+<ul class="tools pull-left"><li><a href=""><span class="font-size-14">Category</span></a></li></ul>
+<ul class="tools text-right"><li><a href="#"><span class="badge badge-primary">1</span></a></li></ul>
+</div>
+<div class="test-list-wrapper scrollable">
+<ul class="test-list-item">
+<li class="test-item">
+<div class="test-detail">
+<span class="meta">
+<span class='badge log badge-danger'>3</span>
+</span>
+<p class="name">UIAutomation</p>
+<p class="duration text-sm">3 tests</p>
+</div>
+<div class="test-contents d-none">
+<div class="info">
+<h4>UIAutomation</h4>
+<span status="fail" class='badge log badge-danger'>3 failed</span>
+</div>
+<table class='table table-sm mt-4'>
+<thead>
+<tr>
+<th class="status-col">Status</th>
+<th class="timestamp-col">Timestamp</th>
+<th>TestName</th>
+</tr>
+</thead>
+<tbody>
+<tr class="tag-test-status" status="fail">
+<td><span class="badge log fail-bg">Fail</span></td>
+<td>10:49:30 AM</td>
+<td>
+<a href="#" class="linked" test-id='1' id='1'>Validate PlatformIdentifier statuses and error message</a>
+</td>
+</tr>
+<tr class="tag-test-status" status="fail">
+<td><span class="badge log fail-bg">Fail</span></td>
+<td>10:49:54 AM</td>
+<td>
+<a href="#" class="linked" test-id='3' id='3'>Validate PlatformIdentifier statuses and error message</a>
+</td>
+</tr>
+<tr class="tag-test-status" status="fail">
+<td><span class="badge log fail-bg">Fail</span></td>
+<td>10:50:18 AM</td>
+<td>
+<a href="#" class="linked" test-id='5' id='5'>Validate PlatformIdentifier statuses and error message</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="test-content scrollable">
+<div class="test-content-detail">
+<div class="detail-body"></div>
+</div>
+</div>
+</div><div class="test-wrapper row view author-view attributes-view">
+<div class="test-list">
+<div class="test-list-tools">
+<ul class="tools pull-left"><li><a href=""><span class="font-size-14">Author</span></a></li></ul>
+<ul class="tools text-right"><li><a href="#"><span class="badge badge-primary">1</span></a></li></ul>
+</div>
+<div class="test-list-wrapper scrollable">
+<ul class="test-list-item">
+<li class="test-item">
+<div class="test-detail">
+<span class="meta">
+<span class='badge log badge-danger'>3</span>
+</span>
+<p class="name">ParwezSheriff</p>
+<p class="duration text-sm">3 tests</p>
+</div>
+<div class="test-contents d-none">
+<div class="info">
+<h4>ParwezSheriff</h4>
+<span status="fail" class='badge log badge-danger'>3 failed</span>
+</div>
+<table class='table table-sm mt-4'>
+<thead>
+<tr>
+<th class="status-col">Status</th>
+<th class="timestamp-col">Timestamp</th>
+<th>TestName</th>
+</tr>
+</thead>
+<tbody>
+<tr class="tag-test-status" status="fail">
+<td><span class="badge log fail-bg">Fail</span></td>
+<td>10:49:30 AM</td>
+<td>
+<a href="#" class="linked" test-id='1' id='1'>Validate PlatformIdentifier statuses and error message</a>
+</td>
+</tr>
+<tr class="tag-test-status" status="fail">
+<td><span class="badge log fail-bg">Fail</span></td>
+<td>10:49:54 AM</td>
+<td>
+<a href="#" class="linked" test-id='3' id='3'>Validate PlatformIdentifier statuses and error message</a>
+</td>
+</tr>
+<tr class="tag-test-status" status="fail">
+<td><span class="badge log fail-bg">Fail</span></td>
+<td>10:50:18 AM</td>
+<td>
+<a href="#" class="linked" test-id='5' id='5'>Validate PlatformIdentifier statuses and error message</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="test-content scrollable">
+<div class="test-content-detail">
+<div class="detail-body"></div>
+</div>
+</div>
+</div><div class="container-fluid p-4 view dashboard-view">
 <div class="row">
 <div class="col-md-3">
 <div class="card"><div class="card-body">
 <p class="m-b-0">Started</p>
-<h3>23 Mar 2026 10:46:16 AM</h3>
+<h3>23 Mar 2026 10:49:30 AM</h3>
 </div></div>
 </div>
 <div class="col-md-3">
 <div class="card"><div class="card-body">
 <p class="m-b-0">Ended</p>
-<h3>23 Mar 2026 10:46:17 AM</h3>
+<h3>23 Mar 2026 10:50:55 AM</h3>
 </div></div>
 </div>
 <div class="col-md-3">
 <div class="card"><div class="card-body">
 <p class="m-b-0 text-pass">Tests Passed</p>
-<h3>2</h3>
+<h3>3</h3>
 </div></div>
 </div>
 <div class="col-md-3">
 <div class="card"><div class="card-body">
 <p class="m-b-0 text-fail">Tests Failed</p>
-<h3>0</h3>
+<h3>3</h3>
 </div></div>
 </div>
 </div>
@@ -204,12 +619,12 @@
 </div>
 </div>
 <div class="card-footer">
-<div><small data-tooltip='100%'>
-<b>2</b> tests passed
+<div><small data-tooltip='50%'>
+<b>3</b> tests passed
 </small>
 </div>
 <div>
-<small data-tooltip='0%'><b>0</b> tests failed,
+<small data-tooltip='50%'><b>3</b> tests failed,
 <b>0</b> skipped, <b data-tooltip='0%'>0</b> others
 </small>
 </div>
@@ -229,8 +644,8 @@
 <div class="card-footer">
 <div><small data-tooltip='0%'><b>0</b> events passed</small></div>
 <div>
-<small data-tooltip='0%'><b>0</b> events failed,
-<b data-tooltip='%'>2</b> others
+<small data-tooltip='66%'><b>12</b> events failed,
+<b data-tooltip='%'>6</b> others
 </small>
 </div>
 </div>
@@ -246,10 +661,45 @@
 </div></div>
 <script>
 var timeline = {
-"📊 Enterprise Dashboard":0.001,"📊 Enterprise Dashboard":0
+"Validate PlatformIdentifier statuses and error message":24.058,"📊 Enterprise Dashboard":0,"Validate PlatformIdentifier statuses and error message":23.591,"📊 Enterprise Dashboard":0,"Validate PlatformIdentifier statuses and error message":36.945,"📊 Enterprise Dashboard":0
 };
 </script>
 <div class="row">
+<div class="col-lg-6 col-md-12 author-container">
+<div class="card">
+<div class="card-header"><p>Author</p></div>
+<div class="card-body pb-0 pt-0"><table class="table table-sm table-bordered">
+<thead><tr class="bg-gray"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Others</th><th>Passed %</th></tr></thead>
+<tbody>
+<tr>
+<td>ParwezSheriff</td>
+<td>0</td>
+<td>3</td>
+<td>0</td>
+<td>0</td>
+<td>0%</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+<div class="col-lg-6 col-md-12 category-container">
+<div class="card">
+<div class="card-header"><p>Tags</p></div>
+<div class="card-body pb-0 pt-0"><table class="table table-sm table-bordered">
+<thead><tr class="bg-gray"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Others</th><th>Passed %</th></tr></thead><tbody>
+<tr>
+<td>UIAutomation</td>
+<td>0</td>
+<td>3</td>
+<td>0</td>
+<td>0</td>
+<td>0%</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
 <div class="col-lg-6 col-md-12 sysenv-container">
 <div class="card">
 <div class="card-header"><p>System/Environment</p></div>
@@ -281,8 +731,8 @@ var timeline = {
 <script>
 var statusGroup = {
 parentCount: 5,
-passParent: 2,
-failParent: 0,
+passParent: 3,
+failParent: 3,
 warningParent: 0,
 skipParent: 0,
 childCount: 5,
@@ -299,10 +749,10 @@ skipGrandChild: 0,
 infoGrandChild: 0,
 eventsCount: 5,
 passEvents: 0,
-failEvents: 0,
+failEvents: 12,
 warningEvents: 0,
 skipEvents: 0,
-infoEvents: 2
+infoEvents: 6
 };
 </script>        </div>
       </div>
