@@ -1,0 +1,118 @@
+name: PathFinder UI Automation
+
+on:
+  # Run on every push to main
+  push:
+    branches: [ main ]
+
+  # Run on pull requests to main
+  pull_request:
+    branches: [ main ]
+
+  # Run on a schedule — every day at 8:00 AM IST (2:30 AM UTC)
+  schedule:
+    - cron: '30 2 * * *'
+
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  automation:
+    name: Run Selenium Cucumber Tests
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ============================================================
+      # 1. Checkout code
+      # ============================================================
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ============================================================
+      # 2. Set up Java 21
+      # ============================================================
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # ============================================================
+      # 3. Set up Chrome
+      # ============================================================
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      # ============================================================
+      # 4. Create config.properties from GitHub Secrets
+      #    (Never store real credentials in code)
+      # ============================================================
+      - name: Create config.properties
+        run: |
+          cat > PathFinder_UI_Automation/src/test/resources/config.properties << EOF
+          pathfinder.url=${{ secrets.PATHFINDER_URL }}
+          SECRET_PASSKEY=${{ secrets.SECRET_PASSKEY }}
+          USER_NAME=${{ secrets.USER_NAME }}
+          USER_PASSWORD=${{ secrets.USER_PASSWORD }}
+          ORANGE_PLATFORM_ID=${{ secrets.ORANGE_PLATFORM_ID }}
+          RED_PLATFORM_ID=${{ secrets.RED_PLATFORM_ID }}
+          GREEN_PLATFORM_ID=${{ secrets.GREEN_PLATFORM_ID }}
+          ORANGE_TRANSACTION_ID=${{ secrets.ORANGE_TRANSACTION_ID }}
+          GREEN_TRANSACTION_ID=${{ secrets.GREEN_TRANSACTION_ID }}
+          RED_TRANSACTION_ID=${{ secrets.RED_TRANSACTION_ID }}
+          db.url=${{ secrets.DB_URL }}
+          db.username=${{ secrets.DB_USERNAME }}
+          db.password=${{ secrets.DB_PASSWORD }}
+          EOF
+
+      # ============================================================
+      # 5. Cache Maven dependencies (speeds up runs)
+      # ============================================================
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      # ============================================================
+      # 6. Run Tests
+      # ============================================================
+      - name: Run Automation Tests
+        working-directory: PathFinder_UI_Automation
+        run: mvn test
+        continue-on-error: true
+
+      # ============================================================
+      # 7. Upload ExtentReport as artifact
+      # ============================================================
+      - name: Upload Extent Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExtentReport-${{ github.run_number }}
+          path: PathFinder_UI_Automation/test-output/
+          retention-days: 7
+
+      # ============================================================
+      # 8. Upload screenshots on failure
+      # ============================================================
+      - name: Upload Failure Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FailureScreenshots-${{ github.run_number }}
+          path: PathFinder_UI_Automation/test-output/**/screenshots/
+          retention-days: 7
+
+      # ============================================================
+      # 9. Publish test results summary
+      # ============================================================
+      - name: Publish Test Results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Cucumber Test Results
+          path: PathFinder_UI_Automation/target/cucumber.xml
+          reporter: java-junit
