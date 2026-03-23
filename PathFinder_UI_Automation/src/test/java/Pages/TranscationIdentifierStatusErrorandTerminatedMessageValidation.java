@@ -38,8 +38,10 @@ public class TranscationIdentifierStatusErrorandTerminatedMessageValidation {
 
         traceTab.click();
 
-        logger.info("⏳ Waiting 15 sec for Trace Table UI hydration...");
-        try { Thread.sleep(15000); } catch (InterruptedException ignored) {}
+        wait.until(ExpectedConditions.presenceOfElementLocated(
+                By.cssSelector("mc-select")));
+
+        logger.info("✅ Trace Table fully loaded");
     }
 
     // ============================================================

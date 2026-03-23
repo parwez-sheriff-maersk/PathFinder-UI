@@ -9,6 +9,10 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import java.time.Duration;
 
+/**
+ * @deprecated This class is no longer used. Driver setup is handled by Hooks.java via TestContext.
+ */
+@Deprecated
 public class BaseTest {
     public static WebDriver driver;
 

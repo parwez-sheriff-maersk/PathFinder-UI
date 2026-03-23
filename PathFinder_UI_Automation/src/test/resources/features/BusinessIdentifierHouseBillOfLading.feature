@@ -5,5 +5,5 @@ Feature: BusinessIdentifier-House Bill Of Lading status and error message valida
     Given the user is on the Pathfinder application
     When User sign in with environment credentials
 
-  Scenario: Validate PlatformIdentifier statuses and error message
+  Scenario: Validate House Bill Of Lading status and error message
     Then User validates BusinessIdentifier- House Bill Of Lading

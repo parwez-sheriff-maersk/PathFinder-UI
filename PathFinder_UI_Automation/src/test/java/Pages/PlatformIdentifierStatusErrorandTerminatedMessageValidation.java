@@ -41,7 +41,10 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
         traceTab.click();
 
-        try { Thread.sleep(20000); } catch (InterruptedException ignored) {}
+        wait.until(ExpectedConditions.presenceOfElementLocated(
+                By.cssSelector("mc-select")));
+
+        logger.info("✅ Trace Table fully loaded");
     }
 
     // ============================================================

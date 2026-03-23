@@ -11,6 +11,12 @@ dependency-reduced-pom.xml
 .classpath
 bin/
 
+# Credentials — DO NOT commit
+src/test/resources/config.properties
+
+# Test output & reports
+test-output/
+
 # Logs
 *.log
 

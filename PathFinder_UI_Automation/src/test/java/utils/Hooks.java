@@ -112,14 +112,11 @@ public class Hooks {
             test.fail("<b>Page URL at failure:</b> <a href='" + currentUrl + "' target='_blank'>" + currentUrl + "</a>");
 
             // Take screenshot at exact failure point
-            String screenshotPath = ScreenshotUtils.captureFullPage(
-                    driver,
-                    scenario.getName().replaceAll(" ", "_") + "_step_failure"
-            );
+            String base64 = ScreenshotUtils.captureBase64(driver);
 
-            if (screenshotPath != null) {
+            if (base64 != null) {
                 test.fail("<b>Screenshot at failure point:</b>")
-                    .addScreenCaptureFromPath(screenshotPath, "Step Failure Screenshot");
+                    .addScreenCaptureFromBase64String(base64, "Step Failure Screenshot");
                 ExtentTestManager.markScreenshotTaken();
             }
 
@@ -138,6 +135,7 @@ public class Hooks {
         try {
 
             ExtentTest test = ExtentTestManager.getTest();
+            if (test == null) return;
             WebDriver driver = testContext.getDriver();
 
             boolean isPassed = !scenario.isFailed();
@@ -165,13 +163,10 @@ public class Hooks {
 
                 // Take screenshot if @AfterStep didn't already take one
                 if (!ExtentTestManager.isScreenshotTaken()) {
-                    String screenshotPath = ScreenshotUtils.captureFullPage(
-                            driver,
-                            scenario.getName().replaceAll(" ", "_")
-                    );
-                    if (screenshotPath != null) {
+                    String base64 = ScreenshotUtils.captureBase64(driver);
+                    if (base64 != null) {
                         test.fail("<b>Failure Screenshot:</b>")
-                            .addScreenCaptureFromPath(screenshotPath, "Failure Screenshot");
+                            .addScreenCaptureFromBase64String(base64, "Failure Screenshot");
                     }
                 }
 

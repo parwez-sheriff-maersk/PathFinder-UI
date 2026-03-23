@@ -4,10 +4,7 @@ import Pages.PathFinderLocators;
 import Pages.PlatformIdentifierStatusErrorandTerminatedMessageValidation;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +15,7 @@ import utils.TestContext;
 import utils.DatabaseUtils;
 import utils.PlatformRecord;
 import utils.StatusMapper;
+import utils.WaitUtils;
 
 public class PlatformIdentifierStatusandErrorMessageValidationSteps {
 
@@ -43,15 +41,13 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
     public void user_validates_platform_identifier() throws InterruptedException {
 
         WebDriver driver = getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
         PlatformIdentifierStatusErrorandTerminatedMessageValidation platformPage =
                 new PlatformIdentifierStatusErrorandTerminatedMessageValidation(driver);
 
         logger.info("🚀 ===== DB vs UI Platform Identifier Validation Started =====");
 
-        wait.until(ExpectedConditions.elementToBeClickable(
-                PathFinderLocators.TRACE_TABLE_TAB));
+        WaitUtils.waitForElementClickable(driver, PathFinderLocators.TRACE_TABLE_TAB, 30, logger);
 
         logger.info("✅ Dashboard Loaded");
 

@@ -1,3 +1,4 @@
+@ALL
 Feature: Transaction ID status and error message validation in Pathfinder
 
   Background:

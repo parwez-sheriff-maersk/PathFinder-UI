@@ -4,20 +4,14 @@ import Pages.PathFinderLocators;
 import Pages.BusinessIdentifierBookingPages;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import utils.TestContext;
 import utils.DatabaseUtils;
 import utils.PlatformRecord;
 import utils.StatusMapper;
+import utils.WaitUtils;
 
 public class BusinessIdentifierBookingStep {
 
@@ -43,12 +37,10 @@ public class BusinessIdentifierBookingStep {
     public void user_validates_booking_number() throws InterruptedException {
 
         WebDriver driver = getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
         logger.info("🚀 ===== BOOKING NUMBER DB vs UI VALIDATION STARTED =====");
 
-        wait.until(ExpectedConditions.elementToBeClickable(
-                PathFinderLocators.TRACE_TABLE_TAB));
+        WaitUtils.waitForElementClickable(driver, PathFinderLocators.TRACE_TABLE_TAB, 30, logger);
 
         logger.info("✅ Dashboard Loaded");
 

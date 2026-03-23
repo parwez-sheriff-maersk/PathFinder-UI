@@ -258,13 +258,10 @@ public class StatusValidation {
                 return;
             }
 
-            String path = ScreenshotUtils.captureFullPage(
-                    driver,
-                    "Status_Mismatch"
-            );
+            String base64 = ScreenshotUtils.captureBase64(driver);
 
-            if (path != null) {
-                test.addScreenCaptureFromPath(path, "Failure Screenshot");
+            if (base64 != null) {
+                test.addScreenCaptureFromBase64String(base64, "Failure Screenshot");
                 ExtentTestManager.markScreenshotTaken();
             }
 

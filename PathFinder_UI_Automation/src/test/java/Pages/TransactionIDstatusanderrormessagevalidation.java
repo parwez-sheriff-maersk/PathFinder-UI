@@ -60,9 +60,7 @@ public class TransactionIDstatusanderrormessagevalidation {
 
             // ===== Dates =====
             setStartDateYesterday10();
-           // Thread.sleep(90000);
-            setEndDateToday10(); 
-            Thread.sleep(9000000);
+            setEndDateToday10();
 
             // ===== Search AFTER End Date completes =====
             logger.info("🔎 Waiting for Search button");

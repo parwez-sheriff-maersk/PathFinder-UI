@@ -4,12 +4,9 @@ import Pages.BusinessIdentifierHouseBillOfLadingPages;
 import Pages.PathFinderLocators;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import utils.TestContext;
+import utils.WaitUtils;
 
-import java.time.Duration;
 import java.util.logging.Logger;
 
 public class BusinessIdentifierHouseBillOfLadingSteps {
@@ -37,7 +34,6 @@ public class BusinessIdentifierHouseBillOfLadingSteps {
             throws InterruptedException {
 
         WebDriver driver = getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
         logger.info("==================================================");
         logger.info("🚀 STARTING HOUSE BILL OF LADING VALIDATION");
@@ -45,17 +41,12 @@ public class BusinessIdentifierHouseBillOfLadingSteps {
 
         try {
 
-            wait.until(ExpectedConditions.elementToBeClickable(
-                    PathFinderLocators.TRACE_TABLE_TAB));
+            WaitUtils.waitForElementClickable(driver, PathFinderLocators.TRACE_TABLE_TAB, 30, logger);
 
             logger.info("✅ Dashboard Loaded Successfully");
 
             // 🔥 CLICK TRACE TABLE TAB
-            WebElement traceTab =
-                    wait.until(ExpectedConditions.elementToBeClickable(
-                            PathFinderLocators.TRACE_TABLE_TAB));
-
-            traceTab.click();
+            WaitUtils.waitForElementClickable(driver, PathFinderLocators.TRACE_TABLE_TAB, 30, logger).click();
             Thread.sleep(3000);
 
             logger.info("✅ Trace Table tab clicked");
