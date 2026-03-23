@@ -103,7 +103,7 @@ jobs:
       # 8. Upload screenshots on failure
       # ============================================================
       - name: Upload Failure Screenshots
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: FailureScreenshots-${{ github.run_number }}
