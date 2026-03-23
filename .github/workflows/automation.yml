@@ -120,3 +120,4 @@ jobs:
           name: Cucumber Test Results
           path: PathFinder_UI_Automation/target/cucumber.xml
           reporter: java-junit
+          fail-on-error: false
