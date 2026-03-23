@@ -45,10 +45,12 @@ jobs:
           distribution: 'temurin'
 
       # ============================================================
-      # 3. Set up Chrome
+      # 3. Verify Chrome is available (pre-installed on ubuntu-latest)
       # ============================================================
-      - name: Set up Chrome
-        uses: browser-actions/setup-chrome@v1
+      - name: Verify Chrome Installation
+        run: |
+          google-chrome --version || chromium-browser --version
+          which google-chrome || which chromium-browser
 
       # ============================================================
       # 4. Create config.properties from GitHub Secrets
