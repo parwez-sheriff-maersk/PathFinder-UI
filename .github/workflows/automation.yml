@@ -18,7 +18,9 @@ on:
 
 permissions:
   checks: write
-  contents: read
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   automation:
@@ -121,3 +123,32 @@ jobs:
           path: PathFinder_UI_Automation/target/cucumber.xml
           reporter: java-junit
           fail-on-error: false
+
+      # ============================================================
+      # 10. Copy screenshots into report folder for GitHub Pages
+      # ============================================================
+      - name: Prepare Report for GitHub Pages
+        if: always()
+        run: |
+          mkdir -p gh-pages
+          # Find latest run folder and copy to gh-pages
+          REPORT_DIR=$(find PathFinder_UI_Automation/test-output -name "ExtentReport.html" | head -1 | xargs dirname)
+          if [ -d "$REPORT_DIR" ]; then
+            cp -r "$REPORT_DIR"/. gh-pages/
+          fi
+          # Create index.html redirect if not exists
+          if [ ! -f gh-pages/index.html ]; then
+            cp gh-pages/ExtentReport.html gh-pages/index.html 2>/dev/null || echo "<meta http-equiv='refresh' content='0; url=ExtentReport.html'>" > gh-pages/index.html
+          fi
+
+      # ============================================================
+      # 11. Deploy report to GitHub Pages
+      # ============================================================
+      - name: Deploy Report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
+          publish_branch: gh-pages
+          commit_message: "Update test report - Run #${{ github.run_number }}"
