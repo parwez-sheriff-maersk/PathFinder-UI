@@ -154,73 +154,48 @@ jobs:
           commit_message: "Update test report - Run #${{ github.run_number }}"
 
       # ============================================================
-      # 12. Send Email Notification with Report Link
+      # 12. Send Email Notification via SendGrid
       # ============================================================
       - name: Send Email Notification
         if: always()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.office365.com
-          server_port: 587
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "PathFinder UI Automation | Run #${{ github.run_number }} | ${{ job.status == 'success' && '✅ PASSED' || '❌ FAILED' }}"
-          to: parwez.n@maersk.com
-          from: ${{ secrets.MAIL_USERNAME }}
-          html_body: |
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f4f4; padding: 20px; border-radius: 8px;">
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_NUMBER: ${{ github.run_number }}
+          ACTOR: ${{ github.actor }}
+          REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then
+            STATUS_LABEL="All Tests Passed"
+            STATUS_COLOR="#1a7a3c"
+            STATUS_BG="#e6f9ed"
+            STATUS_ICON="PASSED"
+          else
+            STATUS_LABEL="Some Tests Failed"
+            STATUS_COLOR="#cc0000"
+            STATUS_BG="#fff0f0"
+            STATUS_ICON="FAILED"
+          fi
 
-              <div style="background: #003057; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-                <h2 style="color: #ffffff; margin: 0;">PathFinder UI Automation</h2>
-                <p style="color: #a0c4ff; margin: 5px 0 0 0;">Automated Test Execution Report</p>
-              </div>
-
-              <div style="background: #ffffff; padding: 24px; border-radius: 0 0 8px 8px;">
-
-                <div style="text-align: center; margin-bottom: 20px;">
-                  <span style="display: inline-block; padding: 10px 24px; border-radius: 24px; font-size: 18px; font-weight: bold;
-                    background: ${{ job.status == 'success' && '#e6f9ed' || '#fff0f0' }};
-                    color: ${{ job.status == 'success' && '#1a7a3c' || '#cc0000' }};
-                    border: 2px solid ${{ job.status == 'success' && '#1a7a3c' || '#cc0000' }};">
-                    ${{ job.status == 'success' && '✅ All Tests Passed' || '❌ Some Tests Failed' }}
-                  </span>
-                </div>
-
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                  <tr style="background: #f9f9f9;">
-                    <td style="padding: 10px 14px; font-weight: bold; color: #555; width: 40%;">Run Number</td>
-                    <td style="padding: 10px 14px; color: #222;">#${{ github.run_number }}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 14px; font-weight: bold; color: #555;">Triggered By</td>
-                    <td style="padding: 10px 14px; color: #222;">${{ github.actor }}</td>
-                  </tr>
-                  <tr style="background: #f9f9f9;">
-                    <td style="padding: 10px 14px; font-weight: bold; color: #555;">Branch</td>
-                    <td style="padding: 10px 14px; color: #222;">${{ github.ref_name }}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 14px; font-weight: bold; color: #555;">Trigger</td>
-                    <td style="padding: 10px 14px; color: #222;">${{ github.event_name }}</td>
-                  </tr>
-                  <tr style="background: #f9f9f9;">
-                    <td style="padding: 10px 14px; font-weight: bold; color: #555;">Status</td>
-                    <td style="padding: 10px 14px; color: #222;">${{ job.status }}</td>
-                  </tr>
-                </table>
-
-                <div style="text-align: center; margin: 24px 0;">
-                  <a href="https://parwez-sheriff-maersk.github.io/PathFinder-UI/"
-                     style="display: inline-block; padding: 14px 32px; background: #003057; color: #ffffff;
-                            text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: bold;">
-                    📊 View Full Test Report
-                  </a>
-                </div>
-
-                <p style="color: #888; font-size: 12px; text-align: center; margin-top: 20px;">
-                  This is an automated notification from GitHub Actions.<br>
-                  Repository: <a href="https://github.com/parwez-sheriff-maersk/PathFinder-UI" style="color: #003057;">PathFinder-UI</a>
-                </p>
-
-              </div>
-            </div>
+          curl --request POST \
+            --url https://api.sendgrid.com/v3/mail/send \
+            --header "Authorization: Bearer ${SENDGRID_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data @- <<EOF
+          {
+            "personalizations": [
+              {
+                "to": [{ "email": "parwez.n@maersk.com" }],
+                "subject": "PathFinder UI Automation | Run #${RUN_NUMBER} | ${STATUS_ICON}"
+              }
+            ],
+            "from": { "email": "parwez.n@maersk.com", "name": "PathFinder Automation" },
+            "content": [
+              {
+                "type": "text/html",
+                "value": "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f4f4f4;padding:20px;border-radius:8px;'><div style='background:#003057;padding:20px;border-radius:8px 8px 0 0;text-align:center;'><h2 style='color:#ffffff;margin:0;'>PathFinder UI Automation</h2><p style='color:#a0c4ff;margin:5px 0 0 0;'>Automated Test Execution Report</p></div><div style='background:#ffffff;padding:24px;border-radius:0 0 8px 8px;'><div style='text-align:center;margin-bottom:20px;'><span style='display:inline-block;padding:10px 24px;border-radius:24px;font-size:18px;font-weight:bold;background:${STATUS_BG};color:${STATUS_COLOR};border:2px solid ${STATUS_COLOR};'>${STATUS_LABEL}</span></div><table style='width:100%;border-collapse:collapse;margin-bottom:20px;'><tr style='background:#f9f9f9;'><td style='padding:10px 14px;font-weight:bold;color:#555;width:40%;'>Run Number</td><td style='padding:10px 14px;color:#222;'>#${RUN_NUMBER}</td></tr><tr><td style='padding:10px 14px;font-weight:bold;color:#555;'>Triggered By</td><td style='padding:10px 14px;color:#222;'>${ACTOR}</td></tr><tr style='background:#f9f9f9;'><td style='padding:10px 14px;font-weight:bold;color:#555;'>Branch</td><td style='padding:10px 14px;color:#222;'>${REF_NAME}</td></tr><tr><td style='padding:10px 14px;font-weight:bold;color:#555;'>Trigger</td><td style='padding:10px 14px;color:#222;'>${EVENT_NAME}</td></tr><tr style='background:#f9f9f9;'><td style='padding:10px 14px;font-weight:bold;color:#555;'>Status</td><td style='padding:10px 14px;color:#222;'>${JOB_STATUS}</td></tr></table><div style='text-align:center;margin:24px 0;'><a href='https://parwez-sheriff-maersk.github.io/PathFinder-UI/' style='display:inline-block;padding:14px 32px;background:#003057;color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:bold;'>View Full Test Report</a></div><p style='color:#888;font-size:12px;text-align:center;margin-top:20px;'>This is an automated notification from GitHub Actions.<br>Repository: <a href='https://github.com/parwez-sheriff-maersk/PathFinder-UI' style='color:#003057;'>PathFinder-UI</a></p></div></div>"
+              }
+            ]
+          }
+          EOF
