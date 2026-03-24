@@ -1,6 +1,5 @@
 package stepDefinitions;
 
-import Pages.PathFinderLocators;
 import Pages.PlatformIdentifierStatusErrorandTerminatedMessageValidation;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.WebDriver;
@@ -13,9 +12,9 @@ import java.util.stream.Collectors;
 
 import utils.TestContext;
 import utils.DatabaseUtils;
+import utils.NavigationUtils;
 import utils.PlatformRecord;
 import utils.StatusMapper;
-import utils.WaitUtils;
 
 public class PlatformIdentifierStatusandErrorMessageValidationSteps {
 
@@ -47,11 +46,8 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
 
         logger.info("🚀 ===== DB vs UI Platform Identifier Validation Started =====");
 
-        WaitUtils.waitForElementClickable(driver, PathFinderLocators.TRACE_TABLE_TAB, 30, logger);
-
-        logger.info("✅ Dashboard Loaded");
-
-        platformPage.clickTraceTableTab();
+        // Reusable Trace Table click from NavigationUtils
+        NavigationUtils.clickTraceTableTab(driver);
 
         List<PlatformRecord> records =
                 DatabaseUtils.getLatestPlatformIdentifiers(context.getProperties());

@@ -1,6 +1,5 @@
 package stepDefinitions;
 
-import Pages.PathFinderLocators;
 import Pages.BusinessIdentifierBookingPages;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.WebDriver;
@@ -8,10 +7,7 @@ import org.openqa.selenium.WebDriver;
 import java.util.logging.Logger;
 
 import utils.TestContext;
-import utils.DatabaseUtils;
-import utils.PlatformRecord;
-import utils.StatusMapper;
-import utils.WaitUtils;
+import utils.NavigationUtils;
 
 public class BusinessIdentifierBookingStep {
 
@@ -38,21 +34,35 @@ public class BusinessIdentifierBookingStep {
 
         WebDriver driver = getDriver();
 
-        logger.info("🚀 ===== BOOKING NUMBER DB vs UI VALIDATION STARTED =====");
+        logger.info("==================================================");
+        logger.info("🚀 STARTING BOOKING NUMBER VALIDATION");
+        logger.info("==================================================");
 
-        WaitUtils.waitForElementClickable(driver, PathFinderLocators.TRACE_TABLE_TAB, 30, logger);
+        try {
 
-        logger.info("✅ Dashboard Loaded");
+            // Reusable Trace Table click from NavigationUtils
+            NavigationUtils.clickTraceTableTab(driver);
 
-        BusinessIdentifierBookingPages bookingPage =
-                new BusinessIdentifierBookingPages(driver);
+            BusinessIdentifierBookingPages bookingPage =
+                    new BusinessIdentifierBookingPages(driver);
 
-        // 🔥 CALL TRACE TAB METHOD
-        bookingPage.clickTraceTableTab();
+            bookingPage.searchAndValidateBooking(context.getProperties());
 
-        // 🔥 CALL MAIN FLOW
-        bookingPage.searchAndValidateBooking(context.getProperties());
+            logger.info("🎉 BOOKING NUMBER VALIDATION COMPLETED");
+            logger.info("==================================================");
 
-        logger.info("🎉 ===== ALL BOOKING NUMBERS VALIDATED SUCCESSFULLY =====");
+        } catch (Exception e) {
+
+            logger.severe("==================================================");
+            logger.severe("❌ BOOKING NUMBER VALIDATION FAILED");
+            logger.severe("❌ ERROR MESSAGE: " + e.getMessage());
+            logger.severe("❌ FULL STACK TRACE BELOW");
+            logger.severe("==================================================");
+
+            e.printStackTrace();
+
+            // Re-throw so Cucumber marks scenario as failed
+            throw e;
+        }
     }
 }

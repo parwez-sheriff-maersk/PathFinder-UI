@@ -7,8 +7,11 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 public class DatabaseUtils {
+
+    private static final Logger logger = Logger.getLogger(DatabaseUtils.class.getName());
 
     // ============================================================
     // DB CONNECTION
@@ -176,6 +179,50 @@ public class DatabaseUtils {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("❌ DB Error while fetching Booking Number records");
+        }
+
+        return records;
+    }
+
+    // ============================================================
+    // ADVANCED SEARCH RECORDS (TRANSACTION ID + PLATFORM ID)
+    // ============================================================
+
+    public static List<AdvancedSearchRecord> getAdvancedSearchRecords(Properties prop) {
+
+        List<AdvancedSearchRecord> records = new ArrayList<>();
+
+        String query =
+                "SELECT trace_id, platform_identifier, status, origin_system " +
+                "FROM path_finder_log " +
+                "WHERE trace_id IS NOT NULL " +
+                "AND TRIM(trace_id) != '' " +
+                "AND platform_identifier IS NOT NULL " +
+                "AND TRIM(platform_identifier) != '' " +
+                "ORDER BY log_created_time DESC " +
+                "LIMIT 5";
+
+        try (Connection con = getConnection(prop);
+             PreparedStatement pstmt = con.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                records.add(new AdvancedSearchRecord(
+                        rs.getString("trace_id"),
+                        rs.getString("platform_identifier"),
+                        rs.getString("status"),
+                        rs.getString("origin_system")
+                ));
+            }
+
+            logger.info("====================================");
+            logger.info("✅ Advanced Search Records Fetched: " + records.size());
+            records.forEach(r -> logger.info("  → " + r));
+            logger.info("====================================");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("❌ DB Error while fetching Advanced Search records");
         }
 
         return records;

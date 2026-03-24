@@ -2,22 +2,21 @@ package Pages;
 
 import static Pages.PathFinderLocators.*;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.logging.Logger;
 
 import org.openqa.selenium.*;
-import org.openqa.selenium.support.ui.*;
 
 import utils.ExpandDownArrows;
+import utils.InputClearFeild;
+import utils.NavigationUtils;
 import utils.ShadowDom;
 import utils.StatusValidation;
-import utils.InputClearFeild;
+import utils.WaitUtils;
 
 public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
     private final WebDriver driver;
-    private final WebDriverWait wait;
 
     private static final Logger logger =
             Logger.getLogger(
@@ -25,26 +24,14 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
     public PlatformIdentifierStatusErrorandTerminatedMessageValidation(WebDriver driver) {
         this.driver = driver;
-        this.wait   = new WebDriverWait(driver, Duration.ofSeconds(30));
     }
 
     // ============================================================
-    // TRACE TAB
+    // TRACE TAB (reusable from NavigationUtils)
     // ============================================================
 
     public void clickTraceTableTab() {
-
-        logger.info("🔎 Clicking Trace Table tab...");
-
-        WebElement traceTab =
-                wait.until(ExpectedConditions.elementToBeClickable(TRACE_TABLE_TAB));
-
-        traceTab.click();
-
-        wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.cssSelector("mc-select")));
-
-        logger.info("✅ Trace Table fully loaded");
+        NavigationUtils.clickTraceTableTab(driver);
     }
 
     // ============================================================
@@ -54,28 +41,38 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
     public void updatePlatformIdentifierAndSearch(String newPlatformId)
             throws InterruptedException {
 
+        logger.info("📌 Collapsing any expanded rows...");
         collapseAllExpandedRows();
 
+        logger.info("📌 Finding Platform Identifier input...");
         WebElement input = findPlatformInputByLabel(20);
 
+        logger.info("🔄 Clearing Platform Identifier field...");
         InputClearFeild.safeClearAndFocus(driver, input);
 
+        logger.info("📝 Entering Platform ID: " + newPlatformId);
         input.sendKeys(newPlatformId);
         input.sendKeys(Keys.TAB);
 
+        logger.info("🔍 Clicking Search button...");
         clickSearchButton();
 
-        Thread.sleep(3000);
+        logger.info("⏳ Waiting for search results to load...");
+        Thread.sleep(5000);
+        logger.info("✅ Search completed for Platform ID: " + newPlatformId);
     }
 
     private void clickSearchButton() {
 
+        logger.info("   ➡ Locating Search button...");
         WebElement searchBtn = ShadowDom.waitForInnerClickable(
                 driver, SEARCH_BTN_HOST, SEARCH_BTN, 20, logger);
 
-        wait.until(ExpectedConditions.elementToBeClickable(searchBtn));
+        WaitUtils.waitForElementClickable(driver,
+                SEARCH_BTN_HOST, 10, logger);
 
         ShadowDom.jsClick(driver, searchBtn);
+        logger.info("   ✅ Search button clicked");
     }
 
     private WebElement findPlatformInputByLabel(int timeoutSeconds) {
@@ -98,6 +95,7 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
                     if (placeholder != null &&
                             placeholder.toLowerCase().contains("platform")) {
 
+                        logger.info("   ✅ Platform input found");
                         return input;
                     }
 
@@ -111,21 +109,22 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
     }
 
     // ============================================================
-    // ✅ AMPS EXPANSION + VALIDATION
+    // AMPS EXPANSION + VALIDATION
     // ============================================================
 
     public void expandAndValidateAmps(String expectedStatus) throws InterruptedException {
 
         logger.info("🔵 ===== PROCESSING AMPS =====");
 
-        // Level 1 - Expand Transaction
+        logger.info("⬇ Expanding Level 1 (Transaction)...");
         expandFirstVisibleArrow();
         Thread.sleep(3000);
 
-        // Level 2 - Expand AMPS row
+        logger.info("⬇ Expanding Level 2 (AMPS row)...");
         expandAmpsRow();
         Thread.sleep(3000);
 
+        logger.info("🔍 Validating AMPS status. Expected: " + expectedStatus);
         StatusValidation statusValidation = new StatusValidation(driver);
         statusValidation.validateVisibleStatus(expectedStatus);
 
@@ -133,67 +132,54 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
     }
 
     // ============================================================
-    // SEEBURGER
+    // SEEBURGER EXPANSION + VALIDATION
     // ============================================================
 
     public void expandAndValidateSeeburger(String expectedStatus) throws InterruptedException {
-    	
-    	// 🔽 Scroll to SEEBURGER row before expansion
-    	logger.info("🔽 Scrolling to SEEBURGER row before expansion...");
 
-    	try {
+        logger.info("🔽 Scrolling to SEEBURGER row before expansion...");
 
-    	    List<WebElement> platforms = ShadowDom.findAllDeep(
-    	            driver,
-    	            "td[data-header-id='systemName'] span.system-name",
-    	            logger
-    	    );
+        try {
+            List<WebElement> platforms = ShadowDom.findAllDeep(
+                    driver, PLATFORM_SYSTEM_NAME_DEEP, logger);
 
-    	    for (WebElement p : platforms) {
+            for (WebElement p : platforms) {
 
-    	        if (p.isDisplayed() &&
-    	            p.getText().trim().equalsIgnoreCase("SEEBURGER")) {
+                if (p.isDisplayed() &&
+                    p.getText().trim().equalsIgnoreCase("SEEBURGER")) {
 
-    	            ((JavascriptExecutor) driver)
-    	                    .executeScript(
-    	                        "arguments[0].scrollIntoView({block:'center'});",
-    	                        p
-    	                    );
+                    ((JavascriptExecutor) driver)
+                            .executeScript(
+                                "arguments[0].scrollIntoView({block:'center'});", p);
 
-    	            Thread.sleep(1000);
+                    Thread.sleep(1000);
+                    logger.info("✅ Scrolled to SEEBURGER row.");
+                    break;
+                }
+            }
 
-    	            logger.info("✅ Scrolled to SEEBURGER row.");
-    	            break;
-    	        }
-    	    }
-
-    	} catch (Exception e) {
-    	    logger.warning("⚠ Scroll before SEEBURGER expansion failed: " + e.getMessage());
-    	}
+        } catch (Exception e) {
+            logger.warning("⚠ Scroll before SEEBURGER expansion failed: " + e.getMessage());
+        }
 
         logger.info("🟣 ===== PROCESSING SEEBURGER =====");
 
         ExpandDownArrows expander = new ExpandDownArrows(driver);
-
-        // ✅ Use existing working method
         expander.expandSeeburgerByIndex();
 
+        logger.info("🔍 Validating SEEBURGER status. Expected: " + expectedStatus);
         StatusValidation statusValidation = new StatusValidation(driver);
-        //statusValidation.validateVisibleStatus(expectedStatus);
         statusValidation.validateStatusForPlatform("SEEBURGER", expectedStatus);
+
         logger.info("✅ SEEBURGER validation completed successfully.");
     }
-    
+
     public void expandSeeburgerRow() {
 
         logger.info("🔎 Expanding SEEBURGER row specifically...");
 
         List<WebElement> platformCells =
-                ShadowDom.findAllDeep(
-                        driver,
-                        "td[data-header-id='systemName'] span.system-name",
-                        logger
-                );
+                ShadowDom.findAllDeep(driver, PLATFORM_SYSTEM_NAME_DEEP, logger);
 
         if (platformCells == null || platformCells.isEmpty()) {
             throw new RuntimeException("❌ No platform rows found!");
@@ -202,24 +188,22 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
         for (WebElement platformElement : platformCells) {
 
             String text = platformElement.getText().trim();
-            logger.info("➡ Found platform: " + text);
+            logger.info("   ➡ Found platform: " + text);
 
             if (text.equalsIgnoreCase("SEEBURGER")) {
 
-                logger.info("✅ SEEBURGER row located");
+                logger.info("   ✅ SEEBURGER row located");
 
-                // find row via JS (safe inside shadow)
                 WebElement row = (WebElement) ((JavascriptExecutor) driver)
                         .executeScript("return arguments[0].closest('tr');", platformElement);
 
-                // 🔥 IMPORTANT: click SVG chevron inside this row
                 WebElement chevron =
                         row.findElement(By.cssSelector("svg[aria-label='chevron-down']"));
 
                 ShadowDom.scrollIntoViewCenter(driver, chevron);
                 ShadowDom.jsClick(driver, chevron);
 
-                logger.info("✅ SEEBURGER arrow clicked successfully");
+                logger.info("   ✅ SEEBURGER arrow clicked");
 
                 try { Thread.sleep(2000); } catch (Exception ignored) {}
 
@@ -229,42 +213,29 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
         throw new RuntimeException("❌ SEEBURGER platform row not found");
     }
-    
+
     public void expandPlatformRow(String platformName) {
 
         logger.info("🔎 Expanding row for: " + platformName);
 
-        // 1️⃣ Find the correct platform row using data-cy
         WebElement row = driver.findElement(
-                By.cssSelector("tr[data-cy='" + platformName + "']")
-        );
+                By.cssSelector("tr[data-cy='" + platformName + "']"));
 
-        logger.info("✅ Row found for " + platformName);
+        logger.info("   ✅ Row found for " + platformName);
 
-        // 2️⃣ Find mc-button inside that row
         WebElement mcButton = row.findElement(
-                By.cssSelector("td.mds-table__column--row-expander mc-button")
-        );
+                By.cssSelector("td.mds-table__column--row-expander mc-button"));
 
-        logger.info("✅ mc-button found inside row");
-
-        // 3️⃣ Enter shadow root
         SearchContext shadowRoot = mcButton.getShadowRoot();
 
-        // 4️⃣ Find real clickable button
-        WebElement innerButton = shadowRoot.findElement(
-                By.cssSelector("button[aria-label='Expand row']")
-        );
+        WebElement innerButton = shadowRoot.findElement(PLATFORM_ROW_EXPANDER_INNER);
 
-        // 5️⃣ Click
         ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center'});",
-                innerButton
-        );
+                "arguments[0].scrollIntoView({block:'center'});", innerButton);
 
         innerButton.click();
 
-        logger.info("✅ " + platformName + " expanded successfully");
+        logger.info("   ✅ " + platformName + " expanded successfully");
 
         try { Thread.sleep(2000); } catch (Exception ignored) {}
     }
@@ -277,25 +248,18 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
         logger.info("🔎 Expanding AMPS row specifically...");
 
-        // 1️⃣ Find all system-name cells
         List<WebElement> platformCells =
-                ShadowDom.findAllDeep(
-                        driver,
-                        "td[data-header-id='systemName'] span.system-name",
-                        logger
-                );
+                ShadowDom.findAllDeep(driver, PLATFORM_SYSTEM_NAME_DEEP, logger);
 
         for (WebElement cell : platformCells) {
 
             String text = cell.getText().trim();
-
-            logger.info("➡ Found platform: " + text);
+            logger.info("   ➡ Found platform: " + text);
 
             if (text.equalsIgnoreCase("AMPS")) {
 
-                logger.info("✅ AMPS row located");
+                logger.info("   ✅ AMPS row located");
 
-                // 2️⃣ Get the entire row
                 WebElement row = (WebElement) ((JavascriptExecutor) driver)
                         .executeScript("return arguments[0].closest('tr')", cell);
 
@@ -303,19 +267,16 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
                     throw new RuntimeException("❌ Could not locate parent row for AMPS");
                 }
 
-                // 3️⃣ Inside that row, find expander column host
-                WebElement host =
-                        row.findElement(By.cssSelector("mc-button"));
+                WebElement host = row.findElement(By.cssSelector("mc-button"));
 
-                // 4️⃣ Enter shadow root and click inner button
                 WebElement arrow =
                         host.getShadowRoot()
-                                .findElement(By.cssSelector("button[aria-label='Expand row']"));
+                                .findElement(PLATFORM_ROW_EXPANDER_INNER);
 
                 ShadowDom.scrollIntoViewCenter(driver, arrow);
                 ShadowDom.jsClick(driver, arrow);
 
-                logger.info("✅ AMPS arrow clicked successfully");
+                logger.info("   ✅ AMPS arrow clicked");
 
                 try { Thread.sleep(2000); } catch (Exception ignored) {}
 
@@ -325,21 +286,23 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
         throw new RuntimeException("❌ AMPS row not found");
     }
+
     // ============================================================
     // WAIT FOR EXPAND ARROWS
     // ============================================================
 
     public void waitForExpandArrowsAfterSearch() {
 
-        WebDriverWait localWait =
-                new WebDriverWait(driver, Duration.ofSeconds(20));
+        logger.info("⏳ Waiting for expand arrows to appear (deep search)...");
 
-        localWait.until(d ->
-                ShadowDom.findAllDeep(
-                        driver,
-                        "button[aria-label='Expand row']",
-                        logger).size() > 0
-        );
+        new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(20))
+                .until(d -> {
+                    List<WebElement> arrows = ShadowDom.findAllDeep(
+                            driver, EXPAND_ROW_BTN_DEEP, logger);
+                    return arrows != null && !arrows.isEmpty();
+                });
+
+        logger.info("✅ Expand arrows found");
     }
 
     // ============================================================
@@ -349,11 +312,12 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
     private void collapseAllExpandedRows()
             throws InterruptedException {
 
+        logger.info("🔄 Collapsing all expanded rows...");
+
         List<WebElement> arrows =
-                ShadowDom.findAllDeep(
-                        driver,
-                        "button[aria-label='Expand row']",
-                        logger);
+                ShadowDom.findAllDeep(driver, EXPAND_ROW_BTN_DEEP, logger);
+
+        int collapsed = 0;
 
         for (WebElement arrow : arrows) {
 
@@ -364,21 +328,23 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
                     ShadowDom.scrollIntoViewCenter(driver, arrow);
                     ShadowDom.jsClick(driver, arrow);
+                    collapsed++;
                     Thread.sleep(500);
                 }
 
             } catch (Exception ignored) {}
         }
 
+        logger.info("✅ Collapsed " + collapsed + " rows");
         Thread.sleep(1000);
     }
+
     public void expandFirstVisibleArrow() {
 
+        logger.info("⬇ Expanding first visible arrow...");
+
         List<WebElement> arrows =
-                ShadowDom.findAllDeep(
-                        driver,
-                        ANY_EXPAND_BUTTON_DEEP,
-                        logger);
+                ShadowDom.findAllDeep(driver, ANY_EXPAND_BUTTON_DEEP, logger);
 
         if (arrows.isEmpty()) {
             throw new RuntimeException("❌ No expand arrows found!");
@@ -393,16 +359,13 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
 
         try { Thread.sleep(2000); } catch (Exception ignored) {}
     }
+
     public void expandFirstTransactionRow() {
 
         logger.info("⬇ Expanding Level 1 (Transaction)...");
 
         List<WebElement> arrows =
-                ShadowDom.findAllDeep(
-                        driver,
-                        "button[aria-label='Expand row']",
-                        logger
-                );
+                ShadowDom.findAllDeep(driver, EXPAND_ROW_BTN_DEEP, logger);
 
         if (arrows == null || arrows.isEmpty()) {
             logger.info("ℹ No Level 1 arrow found. Possibly already expanded.");
@@ -422,88 +385,77 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
             logger.info("ℹ Level 1 expansion skipped (already expanded)");
         }
     }
- // ============================================================
- // SMART SEEBURGER HANDLER (WITHOUT TOUCHING EXISTING CODE)
- // ============================================================
 
- public void expandAndValidateSeeburgerSmart(String expectedStatus) throws InterruptedException {
+    // ============================================================
+    // SMART SEEBURGER HANDLER
+    // ============================================================
 
-     logger.info("🟣 ===== SMART SEEBURGER PROCESSING =====");
+    public void expandAndValidateSeeburgerSmart(String expectedStatus) throws InterruptedException {
 
-     ExpandDownArrows expander = new ExpandDownArrows(driver);
+        logger.info("🟣 ===== SMART SEEBURGER PROCESSING =====");
 
-     // Expand Level 1 first
-     expander.expandFirstTransactionRow();
+        ExpandDownArrows expander = new ExpandDownArrows(driver);
 
-     List<String> platforms = expander.getAvailablePlatforms();
+        expander.expandFirstTransactionRow();
 
-     // Case 1: Only SEEBURGER exists
-     if (platforms.size() == 1 && platforms.contains("SEEBURGER")) {
+        List<String> platforms = expander.getAvailablePlatforms();
 
-         logger.info("🔹 Only SEEBURGER present");
+        if (platforms.size() == 1 && platforms.contains("SEEBURGER")) {
 
-         expander.expandSeeburgerByIndex();
+            logger.info("🔹 Only SEEBURGER present");
+            expander.expandSeeburgerByIndex();
+            new StatusValidation(driver).validateVisibleStatus(expectedStatus);
+            return;
+        }
 
-         new StatusValidation(driver).validateVisibleStatus(expectedStatus);
-         return;
-     }
+        if (platforms.contains("AMPS")) {
 
-     // Case 2: AMPS + SEEBURGER
-     if (platforms.contains("AMPS")) {
+            logger.info("🔵 Expanding AMPS first...");
+            expander.expandPlatformRowInsideExpandedSection("AMPS");
+            new StatusValidation(driver).validateVisibleStatus(expectedStatus);
+            Thread.sleep(1000);
+        }
 
-         logger.info("🔵 Expanding AMPS first...");
+        if (platforms.contains("SEEBURGER")) {
 
-         expander.expandPlatformRowInsideExpandedSection("AMPS");
+            logger.info("🟣 Expanding SEEBURGER after AMPS...");
+            expander.expandSeeburgerByIndex();
+            new StatusValidation(driver).validateVisibleStatus(expectedStatus);
+        }
 
-         new StatusValidation(driver).validateVisibleStatus(expectedStatus);
+        logger.info("✅ SMART SEEBURGER validation completed.");
+    }
 
-         Thread.sleep(1000);
-     }
+    public void scrollToSeeburgerRow() throws InterruptedException {
 
-     if (platforms.contains("SEEBURGER")) {
+        logger.info("🔽 Preparing to scroll to SEEBURGER row...");
 
-         logger.info("🟣 Expanding SEEBURGER after AMPS...");
+        List<WebElement> systemCells =
+                ShadowDom.findAllDeep(driver, PLATFORM_SYSTEM_NAME_DEEP, logger);
 
-         expander.expandSeeburgerByIndex();
+        boolean found = false;
 
-         new StatusValidation(driver).validateVisibleStatus(expectedStatus);
-     }
+        for (WebElement cell : systemCells) {
 
-     logger.info("✅ SMART SEEBURGER validation completed.");
- }
- public void scrollToSeeburgerRow() throws InterruptedException {
+            String systemName = cell.getText().trim().toUpperCase();
 
-	    logger.info("🔽 Preparing to scroll to SEEBURGER row...");
+            if (systemName.equals("SEEBURGER")) {
 
-	    List<WebElement> systemCells =
-	            ShadowDom.findAllDeep(driver,
-	                    "td[data-header-id='systemName'] span.system-name",
-	                    logger);
+                logger.info("🎯 SEEBURGER row found. Scrolling now...");
 
-	    boolean found = false;
+                ((JavascriptExecutor) driver)
+                        .executeScript("arguments[0].scrollIntoView({block:'center'});", cell);
 
-	    for (WebElement cell : systemCells) {
+                Thread.sleep(3000);
 
-	        String systemName = cell.getText().trim().toUpperCase();
+                logger.info("✅ Scroll completed and waited 3 seconds.");
+                found = true;
+                break;
+            }
+        }
 
-	        if (systemName.equals("SEEBURGER")) {
-
-	            logger.info("🎯 SEEBURGER row found. Scrolling now...");
-
-	            ((JavascriptExecutor) driver)
-	                    .executeScript("arguments[0].scrollIntoView({block:'center'});", cell);
-
-	            Thread.sleep(3000); // ✅ Wait 3 seconds as you requested
-
-	            logger.info("✅ Scroll completed and waited 3 seconds.");
-	            found = true;
-	            break;
-	        }
-	    }
-
-	    if (!found) {
-	        logger.warning("⚠ SEEBURGER row not found for scrolling.");
-	    }
-	}
-
+        if (!found) {
+            logger.warning("⚠ SEEBURGER row not found for scrolling.");
+        }
+    }
 }

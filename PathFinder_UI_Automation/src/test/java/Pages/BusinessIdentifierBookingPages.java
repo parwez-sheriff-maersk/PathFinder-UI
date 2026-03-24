@@ -2,56 +2,39 @@ package Pages;
 
 import static Pages.PathFinderLocators.*;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.openqa.selenium.*;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import utils.DatabaseUtils;
 import utils.ExpandDownArrows;
 import utils.InputClearFeild;
+import utils.NavigationUtils;
 import utils.PlatformRecord;
 import utils.ShadowDom;
 import utils.StatusMapper;
 import utils.StatusValidation;
+import utils.WaitUtils;
 
 public class BusinessIdentifierBookingPages {
 
     private final WebDriver driver;
-    private final WebDriverWait wait;
 
     private static final Logger logger =
             Logger.getLogger(BusinessIdentifierBookingPages.class.getName());
 
     public BusinessIdentifierBookingPages(WebDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(30));
     }
 
     // ============================================================
-    // CLICK TRACE TABLE TAB
+    // TRACE TAB (reusable from NavigationUtils)
     // ============================================================
 
     public void clickTraceTableTab() {
-
-        logger.info("🔽 Clicking Trace Table Tab...");
-
-        WebElement traceTab =
-                wait.until(ExpectedConditions.elementToBeClickable(
-                        TRACE_TABLE_TAB));
-
-        traceTab.click();
-
-        logger.info("✅ Trace Table Tab clicked");
-
-        wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.cssSelector("mc-select")));
-
-        logger.info("✅ Trace Table fully loaded");
+        NavigationUtils.clickTraceTableTab(driver);
     }
 
     // ============================================================
@@ -80,7 +63,9 @@ public class BusinessIdentifierBookingPages {
 
         String lastSearchedBooking = "";
 
-        for (PlatformRecord record : records) {
+        for (int i = 0; i < records.size(); i++) {
+
+            PlatformRecord record = records.get(i);
 
             String bookingValue = record.getPlatformId();
             String traceId = record.getTraceId();
@@ -92,12 +77,14 @@ public class BusinessIdentifierBookingPages {
                             dbRawStatus,
                             originSystem);
 
-            logger.info("--------------------------------------------------");
-            logger.info("📌 Booking Number  : " + bookingValue);
-            logger.info("📌 Trace ID        : " + traceId);
-            logger.info("📌 DB Status       : " + dbRawStatus);
-            logger.info("📌 Expected UI Map : " + expectedStatus);
-            logger.info("--------------------------------------------------");
+            logger.info("==================================================");
+            logger.info("🔁 RECORD " + (i + 1) + " OF " + records.size());
+            logger.info("   Booking Number  : " + bookingValue);
+            logger.info("   Trace ID        : " + traceId);
+            logger.info("   Origin System   : " + originSystem);
+            logger.info("   DB Status       : " + dbRawStatus);
+            logger.info("   Expected UI Map : " + expectedStatus);
+            logger.info("==================================================");
 
             if (bookingValue.equals(lastSearchedBooking)) {
 
@@ -106,7 +93,8 @@ public class BusinessIdentifierBookingPages {
                 driver.navigate().refresh();
                 Thread.sleep(4000);
 
-                clickTraceTableTab();
+                logger.info("🔄 Re-clicking Trace Table tab after refresh...");
+                NavigationUtils.clickTraceTableTab(driver);
                 selectBookingFromDropdown();
                 enterBookingAndSearch(bookingValue);
 
@@ -117,10 +105,11 @@ public class BusinessIdentifierBookingPages {
 
             lastSearchedBooking = bookingValue;
 
-            Thread.sleep(5000);
-
+            logger.info("📌 [" + (i + 1) + "] Expanding rows (AMPS)...");
             expander.expandFirstRowThenAmps();
+            logger.info("✅ Rows expanded");
 
+            logger.info("📌 [" + (i + 1) + "] Validating AMPS status...");
             statusValidation.validatePlatformStatus(
                     "AMPS",
                     expectedStatus,
@@ -129,13 +118,16 @@ public class BusinessIdentifierBookingPages {
                     dbRawStatus
             );
 
-            logger.info("✅ AMPS validation completed successfully.");
+            logger.info("==================================================");
+            logger.info("✅ RECORD " + (i + 1) + " — PASSED");
+            logger.info("==================================================");
 
             Thread.sleep(2000);
         }
 
         logger.info("==================================================");
         logger.info("🎉 BOOKING NUMBER VALIDATION COMPLETED");
+        logger.info("   Total Records Validated: " + records.size());
         logger.info("==================================================");
     }
 
@@ -145,15 +137,16 @@ public class BusinessIdentifierBookingPages {
 
     private void selectBookingFromDropdown() throws InterruptedException {
 
+        logger.info("📌 Opening Business Identifier dropdown...");
         WebElement dropdown =
-                wait.until(ExpectedConditions.elementToBeClickable(
-                        By.cssSelector("mc-select")));
-
+                WaitUtils.waitForElementClickable(driver, MC_SELECT_DROPDOWN, 30, logger);
         dropdown.click();
         Thread.sleep(1500);
+        logger.info("✅ Dropdown opened");
 
+        logger.info("📌 Selecting 'BOOKING NUMBER' option...");
         List<WebElement> options =
-                ShadowDom.findAllDeep(driver, "mc-option", logger);
+                ShadowDom.findAllDeep(driver, DROPDOWN_OPTION_DEEP, logger);
 
         for (WebElement option : options) {
 
@@ -166,12 +159,13 @@ public class BusinessIdentifierBookingPages {
                 ShadowDom.scrollIntoViewCenter(driver, option);
                 Thread.sleep(800);
                 ShadowDom.jsClick(driver, option);
+                logger.info("✅ 'BOOKING NUMBER' selected");
                 break;
             }
         }
 
         Thread.sleep(2000);
-        logger.info("✅ BOOKING NUMBER selected successfully");
+        logger.info("✅ BOOKING NUMBER selection completed");
     }
 
     // ============================================================
@@ -180,21 +174,23 @@ public class BusinessIdentifierBookingPages {
 
     private void enterBookingAndSearch(String bookingValue) throws InterruptedException {
 
-        WebElement valueHost =
-                wait.until(ExpectedConditions.presenceOfElementLocated(
-                        By.cssSelector("mc-input.inline-input")));
+        logger.info("📝 Entering Booking Number: " + bookingValue);
+
+        WaitUtils.waitForElementVisible(driver, INLINE_INPUT_FIELDS, 30, logger);
+        WebElement valueHost = driver.findElement(INLINE_INPUT_FIELDS);
 
         SearchContext shadow = valueHost.getShadowRoot();
-        WebElement valueInput =
-                shadow.findElement(By.cssSelector("input"));
+        WebElement valueInput = shadow.findElement(SHADOW_INPUT);
 
         InputClearFeild.safeClearAndFocus(driver, valueInput);
 
         valueInput.sendKeys(bookingValue);
         valueInput.sendKeys(Keys.TAB);
+        logger.info("✅ Booking Number entered: " + bookingValue);
 
         Thread.sleep(1000);
 
+        logger.info("🔍 Clicking Search button...");
         WebElement searchBtn =
                 ShadowDom.waitForInnerClickable(
                         driver,
@@ -204,17 +200,21 @@ public class BusinessIdentifierBookingPages {
                         logger);
 
         ShadowDom.jsClick(driver, searchBtn);
+        logger.info("✅ Search button clicked");
 
-        logger.info("🔎 Search clicked. Waiting for table data...");
+        logger.info("⏳ Waiting for search results to load...");
+        Thread.sleep(5000);
 
-        wait.until(d -> {
-            List<WebElement> arrows =
-                    ShadowDom.findAllDeep(driver,
-                            ANY_EXPAND_BUTTON_DEEP,
-                            logger);
-            return arrows != null && arrows.size() > 0;
-        });
+        logger.info("⏳ Waiting for expand arrows to appear...");
+        new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(20))
+                .until(d -> {
+                    List<WebElement> arrows =
+                            ShadowDom.findAllDeep(driver,
+                                    ANY_EXPAND_BUTTON_DEEP,
+                                    logger);
+                    return arrows != null && !arrows.isEmpty();
+                });
 
-        logger.info("✅ Table ready for expansion");
+        logger.info("✅ Search results loaded and table ready for expansion");
     }
 }

@@ -1,11 +1,10 @@
 package stepDefinitions;
 
 import Pages.BusinessIdentifierHouseBillOfLadingPages;
-import Pages.PathFinderLocators;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.WebDriver;
+import utils.NavigationUtils;
 import utils.TestContext;
-import utils.WaitUtils;
 
 import java.util.logging.Logger;
 
@@ -41,15 +40,8 @@ public class BusinessIdentifierHouseBillOfLadingSteps {
 
         try {
 
-            WaitUtils.waitForElementClickable(driver, PathFinderLocators.TRACE_TABLE_TAB, 30, logger);
-
-            logger.info("✅ Dashboard Loaded Successfully");
-
-            // 🔥 CLICK TRACE TABLE TAB
-            WaitUtils.waitForElementClickable(driver, PathFinderLocators.TRACE_TABLE_TAB, 30, logger).click();
-            Thread.sleep(3000);
-
-            logger.info("✅ Trace Table tab clicked");
+            // Reusable Trace Table click from NavigationUtils
+            NavigationUtils.clickTraceTableTab(driver);
 
             BusinessIdentifierHouseBillOfLadingPages page =
                     new BusinessIdentifierHouseBillOfLadingPages(driver);
