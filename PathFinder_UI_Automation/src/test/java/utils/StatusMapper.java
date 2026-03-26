@@ -10,48 +10,31 @@ public class StatusMapper {
         originSystem = originSystem.trim().toUpperCase();
 
         // ==========================
-        // AMPS MAPPING
+        // COMMON MAPPING (AMPS + SEEBURGER)
         // ==========================
-        if (originSystem.equals("AMPS")) {
+        switch (dbStatus) {
 
-            switch (dbStatus) {
+            case "CREATED":
+            case "COMPLETED":
+                return "SUCCESS";
 
-                case "CREATED":
-                case "COMPLETED":
-                case "RUNNING":
-                    return "SUCCESS";
+            case "FAILED":
+                return "ERROR";
 
-                case "FAILED":
-                    return "ERROR";
+            case "SUCCESS":
+                return "SUCCESS";
 
-                default:
-                    return dbStatus;
-            }
+            case "ERROR":
+                return "ERROR";
+
+            case "TERMINATED":
+                return "TERMINATED";
+
+            case "RUNNING":
+                return "RUNNING";
+
+            default:
+                return dbStatus;
         }
-
-        // ==========================
-        // SEEBURGER MAPPING
-        // ==========================
-        if (originSystem.equals("SEEBURGER")) {
-
-            switch (dbStatus) {
-
-                case "COMPLETED":
-                case "SUCCESS":
-                case "RUNNING":
-                    return "SUCCESS";
-
-                case "ERROR":
-                    return "ERROR";
-
-                case "TERMINATED":
-                    return "TERMINATED";
-
-                default:
-                    return dbStatus;
-            }
-        }
-
-        return dbStatus;
     }
 }

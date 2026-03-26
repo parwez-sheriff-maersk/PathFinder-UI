@@ -112,7 +112,10 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
     // AMPS EXPANSION + VALIDATION
     // ============================================================
 
-    public void expandAndValidateAmps(String expectedStatus) throws InterruptedException {
+    public void expandAndValidateAmps(String expectedStatus,
+                                      String identifierValue,
+                                      String traceId,
+                                      String dbRawStatus) throws InterruptedException {
 
         logger.info("🔵 ===== PROCESSING AMPS =====");
 
@@ -124,9 +127,14 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
         expandAmpsRow();
         Thread.sleep(3000);
 
-        logger.info("🔍 Validating AMPS status. Expected: " + expectedStatus);
+        logger.info("🔍 Validating AMPS status (scan all, last row decides). Expected: " + expectedStatus);
         StatusValidation statusValidation = new StatusValidation(driver);
-        statusValidation.validateVisibleStatus(expectedStatus);
+        statusValidation.validateBookingStatus(
+                "AMPS",
+                expectedStatus,
+                identifierValue,
+                traceId,
+                dbRawStatus);
 
         logger.info("✅ AMPS validation completed successfully.");
     }
@@ -135,7 +143,10 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
     // SEEBURGER EXPANSION + VALIDATION
     // ============================================================
 
-    public void expandAndValidateSeeburger(String expectedStatus) throws InterruptedException {
+    public void expandAndValidateSeeburger(String expectedStatus,
+                                           String identifierValue,
+                                           String traceId,
+                                           String dbRawStatus) throws InterruptedException {
 
         logger.info("🔽 Scrolling to SEEBURGER row before expansion...");
 
@@ -167,9 +178,14 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
         ExpandDownArrows expander = new ExpandDownArrows(driver);
         expander.expandSeeburgerByIndex();
 
-        logger.info("🔍 Validating SEEBURGER status. Expected: " + expectedStatus);
+        logger.info("🔍 Validating SEEBURGER status (scan all, last row decides). Expected: " + expectedStatus);
         StatusValidation statusValidation = new StatusValidation(driver);
-        statusValidation.validateStatusForPlatform("SEEBURGER", expectedStatus);
+        statusValidation.validateBookingStatus(
+                "SEEBURGER",
+                expectedStatus,
+                identifierValue,
+                traceId,
+                dbRawStatus);
 
         logger.info("✅ SEEBURGER validation completed successfully.");
     }
@@ -384,46 +400,6 @@ public class PlatformIdentifierStatusErrorandTerminatedMessageValidation {
         } catch (Exception e) {
             logger.info("ℹ Level 1 expansion skipped (already expanded)");
         }
-    }
-
-    // ============================================================
-    // SMART SEEBURGER HANDLER
-    // ============================================================
-
-    public void expandAndValidateSeeburgerSmart(String expectedStatus) throws InterruptedException {
-
-        logger.info("🟣 ===== SMART SEEBURGER PROCESSING =====");
-
-        ExpandDownArrows expander = new ExpandDownArrows(driver);
-
-        expander.expandFirstTransactionRow();
-
-        List<String> platforms = expander.getAvailablePlatforms();
-
-        if (platforms.size() == 1 && platforms.contains("SEEBURGER")) {
-
-            logger.info("🔹 Only SEEBURGER present");
-            expander.expandSeeburgerByIndex();
-            new StatusValidation(driver).validateVisibleStatus(expectedStatus);
-            return;
-        }
-
-        if (platforms.contains("AMPS")) {
-
-            logger.info("🔵 Expanding AMPS first...");
-            expander.expandPlatformRowInsideExpandedSection("AMPS");
-            new StatusValidation(driver).validateVisibleStatus(expectedStatus);
-            Thread.sleep(1000);
-        }
-
-        if (platforms.contains("SEEBURGER")) {
-
-            logger.info("🟣 Expanding SEEBURGER after AMPS...");
-            expander.expandSeeburgerByIndex();
-            new StatusValidation(driver).validateVisibleStatus(expectedStatus);
-        }
-
-        logger.info("✅ SMART SEEBURGER validation completed.");
     }
 
     public void scrollToSeeburgerRow() throws InterruptedException {

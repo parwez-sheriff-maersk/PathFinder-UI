@@ -46,8 +46,10 @@ public class ExtentManager {
             runFolder = System.getProperty("user.dir")
                     + "/test-output/Run_" + timestamp;
 
+            // Create run folder and details subfolder
             new File(runFolder + "/details").mkdirs();
 
+            // ExtentReport goes into details/ subfolder (hidden from user)
             ExtentSparkReporter spark =
                     new ExtentSparkReporter(runFolder + "/details/ExtentReport.html");
 
@@ -91,7 +93,7 @@ public class ExtentManager {
     }
 
     // ============================================================
-    // ADD ENTERPRISE DASHBOARD
+    // ADD ENTERPRISE DASHBOARD + GENERATE INDEX.HTML
     // ============================================================
 
     public static void addDashboard() {
@@ -102,6 +104,7 @@ public class ExtentManager {
         long minutes      = durationMs / 60000;
         long seconds      = (durationMs % 60000) / 1000;
         String execTime   = minutes + "m " + seconds + "s";
+        String runDate    = new SimpleDateFormat("dd MMM yyyy, hh:mm:ss a").format(new Date());
 
         double passPercent = totalTests == 0 ? 0 :
                 ((double) passedTests / totalTests) * 100;
@@ -112,6 +115,7 @@ public class ExtentManager {
         allFeatures.addAll(featurePassMap.keySet());
         allFeatures.addAll(featureFailMap.keySet());
 
+        // Build feature rows for the table
         StringBuilder featureRows = new StringBuilder();
 
         for (String feature : allFeatures) {
@@ -123,7 +127,6 @@ public class ExtentManager {
             double fp = total == 0 ? 0 : ((double) pass / total) * 100;
             double ff = 100 - fp;
 
-            String statusColor  = fail == 0 ? "#00ff7f" : "#ff4c4c";
             String statusLabel  = fail == 0 ? "PASSED" : "FAILED";
 
             featureRows.append(
@@ -141,156 +144,324 @@ public class ExtentManager {
             );
         }
 
-        String dashboardHtml =
-            "<div style='font-family:Arial,sans-serif;padding:20px;background:#1a1a2e;border-radius:12px;color:#eee'>" +
-
-            "<h2 style='color:#00c8ff;margin-bottom:5px'>PathFinder Automation — Execution Summary</h2>" +
-            "<p style='color:#888;margin-top:0'>Execution Time: <b style='color:#fff'>" + execTime + "</b></p>" +
-
-            // Summary cards
-            "<div style='display:flex;gap:15px;margin:20px 0'>" +
-
-            "<div style='flex:1;background:#16213e;padding:15px;border-radius:10px;text-align:center;" +
-            "border-left:4px solid #00c8ff'>" +
-            "<div style='font-size:28px;font-weight:bold;color:#00c8ff'>" + totalTests + "</div>" +
-            "<div style='color:#aaa;font-size:13px'>Total Tests</div></div>" +
-
-            "<div style='flex:1;background:#16213e;padding:15px;border-radius:10px;text-align:center;" +
-            "border-left:4px solid #00ff7f'>" +
-            "<div style='font-size:28px;font-weight:bold;color:#00ff7f'>" + passedTests + "</div>" +
-            "<div style='color:#aaa;font-size:13px'>Passed</div></div>" +
-
-            "<div style='flex:1;background:#16213e;padding:15px;border-radius:10px;text-align:center;" +
-            "border-left:4px solid #ff4c4c'>" +
-            "<div style='font-size:28px;font-weight:bold;color:#ff4c4c'>" + failedTests + "</div>" +
-            "<div style='color:#aaa;font-size:13px'>Failed</div></div>" +
-
-            "<div style='flex:1;background:#16213e;padding:15px;border-radius:10px;text-align:center;" +
-            "border-left:4px solid #f0a500'>" +
-            "<div style='font-size:28px;font-weight:bold;color:#f0a500'>" + String.format("%.1f", passPercent) + "%</div>" +
-            "<div style='color:#aaa;font-size:13px'>Pass Rate</div></div>" +
-
-            "</div>" +
-
-            // Overall progress bar
-            "<div style='margin-bottom:20px'>" +
-            "<div style='color:#aaa;font-size:12px;margin-bottom:5px'>Overall Pass / Fail</div>" +
-            "<div style='width:100%;background:#333;height:20px;border-radius:10px;overflow:hidden'>" +
-            "<div style='width:" + String.format("%.1f", passPercent) + "%;background:#00ff7f;height:20px;float:left'></div>" +
-            "<div style='width:" + String.format("%.1f", failPercent) + "%;background:#ff4c4c;height:20px;float:left'></div>" +
-            "</div></div>" +
-
-            // Feature table
-            "<h3 style='color:#00c8ff'>Feature-wise Results</h3>" +
-            "<table style='width:100%;border-collapse:collapse;background:#16213e;border-radius:8px;overflow:hidden'>" +
-            "<thead><tr style='background:#0f3460;color:#00c8ff;font-size:13px'>" +
-            "<th style='padding:10px;text-align:left'>Feature</th>" +
-            "<th style='padding:10px'>Passed</th>" +
-            "<th style='padding:10px'>Failed</th>" +
-            "<th style='padding:10px'>Total</th>" +
-            "<th style='padding:10px'>Progress</th>" +
-            "<th style='padding:10px'>Status</th>" +
-            "</tr></thead>" +
-            "<tbody>" + featureRows + "</tbody>" +
-            "</table>" +
-
-            "</div>";
-
-        extent.createTest("📊 Execution Dashboard")
-                .info(dashboardHtml);
-
-        generateStandaloneReport(execTime, passPercent, failPercent, featureRows.toString());
+        // Generate the beautiful standalone index.html
+        generateIndexReport(runFolder, execTime, runDate,
+                passPercent, failPercent, featureRows.toString());
     }
 
     // ============================================================
-    // GENERATE BEAUTIFUL STANDALONE index.html
+    // GENERATE BEAUTIFUL INDEX.HTML (FRONT PAGE)
     // ============================================================
 
-    private static void generateStandaloneReport(String execTime, double passPercent,
-                                                  double failPercent, String featureRows) {
-        String runDate      = new SimpleDateFormat("dd MMM yyyy HH:mm:ss").format(new Date());
-        String overallStatus = failedTests == 0 ? "ALL TESTS PASSED" : "SOME TESTS FAILED";
-        String overallColor  = failedTests == 0 ? "#00c87a" : "#ff4c4c";
-        String overallBg     = failedTests == 0 ? "#0a2e1a" : "#2a0a0a";
-        String overallBorder = failedTests == 0 ? "#00c87a" : "#ff4c4c";
+    private static void generateIndexReport(String runFolder,
+                                            String execTime,
+                                            String runDate,
+                                            double passPercent,
+                                            double failPercent,
+                                            String featureRowsHtml) {
 
-        String html =
-            "<!DOCTYPE html><html lang='en'><head>" +
-            "<meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>" +
-            "<title>PathFinder Automation Report</title>" +
-            "<style>" +
-            "*{box-sizing:border-box;margin:0;padding:0}" +
-            "body{font-family:'Segoe UI',Arial,sans-serif;background:#0d0d1a;color:#e0e0e0;min-height:100vh}" +
-            ".header{background:linear-gradient(135deg,#003057 0%,#001a33 100%);padding:30px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #00c8ff}" +
-            ".header .title{color:#fff;font-size:22px;font-weight:700;letter-spacing:1px}" +
-            ".header .subtitle{color:#a0c4ff;font-size:13px;margin-top:4px}" +
-            ".header .run-info{text-align:right;color:#a0c4ff;font-size:12px;line-height:1.8}" +
-            ".header .run-info b{color:#fff}" +
-            ".banner{margin:28px 40px 0;padding:16px 24px;border-radius:10px;background:" + overallBg + ";border-left:5px solid " + overallBorder + ";display:flex;align-items:center;gap:12px}" +
-            ".dot{width:14px;height:14px;border-radius:50%;background:" + overallColor + ";flex-shrink:0}" +
-            ".banner-label{font-size:16px;font-weight:700;color:" + overallColor + "}" +
-            ".banner-sub{font-size:12px;color:#888;margin-top:2px}" +
-            ".cards{display:flex;gap:16px;margin:24px 40px}" +
-            ".card{flex:1;background:#16213e;border-radius:12px;padding:20px;text-align:center}" +
-            ".card .num{font-size:36px;font-weight:800}" +
-            ".card .lbl{font-size:12px;color:#888;margin-top:4px;text-transform:uppercase;letter-spacing:1px}" +
-            ".section{margin:0 40px 28px}" +
-            ".section-title{font-size:13px;font-weight:700;color:#00c8ff;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #1e2a45}" +
-            ".prog{background:#1e1e2e;border-radius:8px;overflow:hidden;height:22px;display:flex}" +
-            ".prog-p{background:linear-gradient(90deg,#00c87a,#00ff7f);height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000}" +
-            ".prog-f{background:linear-gradient(90deg,#cc0000,#ff4c4c);height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}" +
-            "table{width:100%;border-collapse:collapse;background:#16213e;border-radius:10px;overflow:hidden}" +
-            "thead tr{background:#0f3460}" +
-            "thead th{padding:12px 16px;color:#00c8ff;font-size:12px;text-transform:uppercase;letter-spacing:1px;text-align:left}" +
-            "thead th:not(:first-child){text-align:center}" +
-            "tbody tr:nth-child(even){background:#131c35}" +
-            "tbody td{padding:11px 16px;font-size:13px;color:#ddd}" +
-            "tbody td:not(:first-child){text-align:center}" +
-            ".badge{display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:700}" +
-            ".bp{background:#00c87a;color:#000}" +
-            ".bf{background:#ff4c4c;color:#fff}" +
-            ".mini{width:100%;background:#333;border-radius:6px;overflow:hidden;height:10px;display:flex}" +
-            ".mini-p{background:#00c87a;height:10px}" +
-            ".mini-f{background:#ff4c4c;height:10px}" +
-            ".btn-wrap{text-align:center;margin:10px 40px 40px}" +
-            ".btn{display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#003057,#0066cc);color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.5px}" +
-            ".footer{text-align:center;padding:20px;color:#444;font-size:11px;border-top:1px solid #1e2a45}" +
-            "</style></head><body>" +
+        String overallStatus = failedTests == 0 ? "ALL PASSED" : "HAS FAILURES";
+        String statusColor   = failedTests == 0 ? "#00ff7f" : "#ff4c4c";
+        String statusGlow    = failedTests == 0
+                ? "0 0 20px rgba(0,255,127,0.4)" : "0 0 20px rgba(255,76,76,0.4)";
 
-            "<div class='header'>" +
-            "<div><div class='title'>PathFinder UI Automation</div><div class='subtitle'>Automated Test Execution Report</div></div>" +
-            "<div class='run-info'><div>Run Date: <b>" + runDate + "</b></div><div>Execution Time: <b>" + execTime + "</b></div><div>Environment: <b>Pre-Production</b></div></div>" +
-            "</div>" +
+        String html = "<!DOCTYPE html>\n" +
+            "<html lang='en'>\n" +
+            "<head>\n" +
+            "  <meta charset='UTF-8'>\n" +
+            "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n" +
+            "  <title>PathFinder Automation Dashboard</title>\n" +
+            "  <style>\n" +
+            "    * { margin: 0; padding: 0; box-sizing: border-box; }\n" +
+            "    body {\n" +
+            "      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n" +
+            "      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0a0a2a 100%);\n" +
+            "      color: #e0e0e0; min-height: 100vh; padding: 0;\n" +
+            "    }\n" +
+            "\n" +
+            "    /* ---- Header ---- */\n" +
+            "    .header {\n" +
+            "      background: linear-gradient(90deg, #0f3460 0%, #16213e 100%);\n" +
+            "      padding: 30px 50px; display: flex; align-items: center;\n" +
+            "      justify-content: space-between; border-bottom: 3px solid #00c8ff;\n" +
+            "      box-shadow: 0 4px 30px rgba(0,200,255,0.15);\n" +
+            "    }\n" +
+            "    .header-left h1 {\n" +
+            "      font-size: 28px; color: #00c8ff;\n" +
+            "      text-shadow: 0 0 15px rgba(0,200,255,0.5);\n" +
+            "    }\n" +
+            "    .header-left p { color: #8892b0; font-size: 14px; margin-top: 4px; }\n" +
+            "    .header-right { text-align: right; }\n" +
+            "    .header-right .status-badge {\n" +
+            "      display: inline-block; padding: 8px 24px; border-radius: 25px;\n" +
+            "      font-weight: bold; font-size: 14px; letter-spacing: 1px;\n" +
+            "      color: " + statusColor + ";\n" +
+            "      border: 2px solid " + statusColor + ";\n" +
+            "      box-shadow: " + statusGlow + ";\n" +
+            "    }\n" +
+            "    .header-right .run-date { color: #8892b0; font-size: 12px; margin-top: 8px; }\n" +
+            "\n" +
+            "    /* ---- Container ---- */\n" +
+            "    .container { max-width: 1200px; margin: 0 auto; padding: 40px 30px; }\n" +
+            "\n" +
+            "    /* ---- Summary Cards ---- */\n" +
+            "    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }\n" +
+            "    .card {\n" +
+            "      background: linear-gradient(145deg, #16213e, #1a1a4e);\n" +
+            "      border-radius: 16px; padding: 25px; text-align: center;\n" +
+            "      border: 1px solid rgba(0,200,255,0.1);\n" +
+            "      box-shadow: 0 8px 32px rgba(0,0,0,0.3);\n" +
+            "      transition: transform 0.3s, box-shadow 0.3s;\n" +
+            "    }\n" +
+            "    .card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(0,200,255,0.2); }\n" +
+            "    .card .number { font-size: 42px; font-weight: bold; margin-bottom: 5px; }\n" +
+            "    .card .label { font-size: 13px; color: #8892b0; text-transform: uppercase; letter-spacing: 1px; }\n" +
+            "    .card-total .number { color: #00c8ff; }\n" +
+            "    .card-pass .number { color: #00ff7f; }\n" +
+            "    .card-fail .number { color: #ff4c4c; }\n" +
+            "    .card-rate .number { color: #f0a500; }\n" +
+            "    .card-total { border-left: 4px solid #00c8ff; }\n" +
+            "    .card-pass  { border-left: 4px solid #00ff7f; }\n" +
+            "    .card-fail  { border-left: 4px solid #ff4c4c; }\n" +
+            "    .card-rate  { border-left: 4px solid #f0a500; }\n" +
+            "\n" +
+            "    /* ---- Donut Chart ---- */\n" +
+            "    .chart-section {\n" +
+            "      display: flex; align-items: center; justify-content: center;\n" +
+            "      gap: 50px; margin-bottom: 40px;\n" +
+            "    }\n" +
+            "    .donut-container { position: relative; width: 200px; height: 200px; }\n" +
+            "    .donut-center {\n" +
+            "      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);\n" +
+            "      text-align: center;\n" +
+            "    }\n" +
+            "    .donut-center .pct { font-size: 36px; font-weight: bold; color: #fff; }\n" +
+            "    .donut-center .pct-label { font-size: 12px; color: #8892b0; }\n" +
+            "    .chart-legend { display: flex; flex-direction: column; gap: 12px; }\n" +
+            "    .legend-item { display: flex; align-items: center; gap: 10px; font-size: 14px; }\n" +
+            "    .legend-dot {\n" +
+            "      width: 14px; height: 14px; border-radius: 50%; display: inline-block;\n" +
+            "    }\n" +
+            "\n" +
+            "    /* ---- Progress Bar ---- */\n" +
+            "    .progress-section { margin-bottom: 40px; }\n" +
+            "    .progress-label { color: #8892b0; font-size: 13px; margin-bottom: 8px; }\n" +
+            "    .progress-bar {\n" +
+            "      width: 100%; height: 24px; background: #1a1a3e;\n" +
+            "      border-radius: 12px; overflow: hidden;\n" +
+            "      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);\n" +
+            "    }\n" +
+            "    .progress-fill-pass {\n" +
+            "      height: 100%; float: left;\n" +
+            "      background: linear-gradient(90deg, #00ff7f, #00c87a);\n" +
+            "      border-radius: 12px 0 0 12px;\n" +
+            "      transition: width 1s ease;\n" +
+            "    }\n" +
+            "    .progress-fill-fail {\n" +
+            "      height: 100%; float: left;\n" +
+            "      background: linear-gradient(90deg, #ff4c4c, #cc3333);\n" +
+            "      border-radius: 0 12px 12px 0;\n" +
+            "      transition: width 1s ease;\n" +
+            "    }\n" +
+            "\n" +
+            "    /* ---- Feature Table ---- */\n" +
+            "    .section-title {\n" +
+            "      font-size: 20px; color: #00c8ff; margin-bottom: 15px;\n" +
+            "      padding-bottom: 8px; border-bottom: 2px solid rgba(0,200,255,0.2);\n" +
+            "    }\n" +
+            "    .feature-table {\n" +
+            "      width: 100%; border-collapse: collapse;\n" +
+            "      background: linear-gradient(145deg, #16213e, #1a1a4e);\n" +
+            "      border-radius: 12px; overflow: hidden;\n" +
+            "      box-shadow: 0 8px 32px rgba(0,0,0,0.3);\n" +
+            "    }\n" +
+            "    .feature-table thead tr {\n" +
+            "      background: linear-gradient(90deg, #0f3460, #16213e);\n" +
+            "    }\n" +
+            "    .feature-table th {\n" +
+            "      padding: 14px 16px; text-align: left; color: #00c8ff;\n" +
+            "      font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;\n" +
+            "    }\n" +
+            "    .feature-table td {\n" +
+            "      padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.05);\n" +
+            "      font-size: 14px;\n" +
+            "    }\n" +
+            "    .feature-table tr:hover { background: rgba(0,200,255,0.05); }\n" +
+            "\n" +
+            "    /* ---- Mini Progress Bar in Table ---- */\n" +
+            "    .mini-bar {\n" +
+            "      width: 100%; height: 8px; background: #333;\n" +
+            "      border-radius: 4px; overflow: hidden; display: flex;\n" +
+            "    }\n" +
+            "    .mini-bar-pass { background: #00ff7f; height: 100%; }\n" +
+            "    .mini-bar-fail { background: #ff4c4c; height: 100%; }\n" +
+            "\n" +
+            "    /* ---- Badges ---- */\n" +
+            "    .badge {\n" +
+            "      padding: 4px 14px; border-radius: 20px; font-size: 11px;\n" +
+            "      font-weight: bold; letter-spacing: 0.5px;\n" +
+            "    }\n" +
+            "    .badge-pass { background: rgba(0,255,127,0.15); color: #00ff7f; border: 1px solid rgba(0,255,127,0.3); }\n" +
+            "    .badge-fail { background: rgba(255,76,76,0.15); color: #ff4c4c; border: 1px solid rgba(255,76,76,0.3); }\n" +
+            "\n" +
+            "    /* ---- CTA Button ---- */\n" +
+            "    .cta-section { text-align: center; margin-top: 50px; }\n" +
+            "    .cta-btn {\n" +
+            "      display: inline-block; padding: 16px 48px;\n" +
+            "      background: linear-gradient(90deg, #00c8ff, #0088cc);\n" +
+            "      color: #fff; text-decoration: none; font-size: 16px;\n" +
+            "      font-weight: bold; border-radius: 30px; letter-spacing: 0.5px;\n" +
+            "      box-shadow: 0 8px 30px rgba(0,200,255,0.3);\n" +
+            "      transition: transform 0.3s, box-shadow 0.3s;\n" +
+            "    }\n" +
+            "    .cta-btn:hover {\n" +
+            "      transform: translateY(-3px);\n" +
+            "      box-shadow: 0 12px 40px rgba(0,200,255,0.5);\n" +
+            "    }\n" +
+            "\n" +
+            "    /* ---- Footer ---- */\n" +
+            "    .footer {\n" +
+            "      text-align: center; padding: 30px; color: #555;\n" +
+            "      font-size: 12px; border-top: 1px solid rgba(255,255,255,0.05);\n" +
+            "      margin-top: 50px;\n" +
+            "    }\n" +
+            "\n" +
+            "    /* ---- Exec Info ---- */\n" +
+            "    .exec-info {\n" +
+            "      display: flex; justify-content: center; gap: 40px;\n" +
+            "      margin-bottom: 40px; color: #8892b0; font-size: 13px;\n" +
+            "    }\n" +
+            "    .exec-info span b { color: #fff; }\n" +
+            "  </style>\n" +
+            "</head>\n" +
+            "<body>\n" +
+            "\n" +
+            "  <!-- Header -->\n" +
+            "  <div class='header'>\n" +
+            "    <div class='header-left'>\n" +
+            "      <h1>PathFinder Automation Dashboard</h1>\n" +
+            "      <p>UI Automation Test Execution Report</p>\n" +
+            "    </div>\n" +
+            "    <div class='header-right'>\n" +
+            "      <div class='status-badge'>" + overallStatus + "</div>\n" +
+            "      <div class='run-date'>" + runDate + "</div>\n" +
+            "    </div>\n" +
+            "  </div>\n" +
+            "\n" +
+            "  <div class='container'>\n" +
+            "\n" +
+            "    <!-- Execution Info -->\n" +
+            "    <div class='exec-info'>\n" +
+            "      <span>Environment: <b>Pre-Production</b></span>\n" +
+            "      <span>Browser: <b>Chrome</b></span>\n" +
+            "      <span>Execution Time: <b>" + execTime + "</b></span>\n" +
+            "      <span>Tester: <b>Parwez Sheriff</b></span>\n" +
+            "    </div>\n" +
+            "\n" +
+            "    <!-- Summary Cards -->\n" +
+            "    <div class='cards'>\n" +
+            "      <div class='card card-total'>\n" +
+            "        <div class='number'>" + totalTests + "</div>\n" +
+            "        <div class='label'>Total Tests</div>\n" +
+            "      </div>\n" +
+            "      <div class='card card-pass'>\n" +
+            "        <div class='number'>" + passedTests + "</div>\n" +
+            "        <div class='label'>Passed</div>\n" +
+            "      </div>\n" +
+            "      <div class='card card-fail'>\n" +
+            "        <div class='number'>" + failedTests + "</div>\n" +
+            "        <div class='label'>Failed</div>\n" +
+            "      </div>\n" +
+            "      <div class='card card-rate'>\n" +
+            "        <div class='number'>" + String.format("%.1f", passPercent) + "%</div>\n" +
+            "        <div class='label'>Pass Rate</div>\n" +
+            "      </div>\n" +
+            "    </div>\n" +
+            "\n" +
+            "    <!-- Donut Chart + Legend -->\n" +
+            "    <div class='chart-section'>\n" +
+            "      <div class='donut-container'>\n" +
+            "        <svg viewBox='0 0 36 36' style='width:200px;height:200px;transform:rotate(-90deg)'>\n" +
+            "          <circle cx='18' cy='18' r='15.9' fill='none' stroke='#1a1a3e' stroke-width='3.5'/>\n" +
+            "          <circle cx='18' cy='18' r='15.9' fill='none' stroke='#00ff7f' stroke-width='3.5'\n" +
+            "                  stroke-dasharray='" + String.format("%.1f", passPercent) + " " + String.format("%.1f", failPercent) + "'\n" +
+            "                  stroke-linecap='round'/>\n" +
+            "          <circle cx='18' cy='18' r='15.9' fill='none' stroke='#ff4c4c' stroke-width='3.5'\n" +
+            "                  stroke-dasharray='" + String.format("%.1f", failPercent) + " " + String.format("%.1f", passPercent) + "'\n" +
+            "                  stroke-dashoffset='-" + String.format("%.1f", passPercent) + "'\n" +
+            "                  stroke-linecap='round'/>\n" +
+            "        </svg>\n" +
+            "        <div class='donut-center'>\n" +
+            "          <div class='pct'>" + String.format("%.0f", passPercent) + "%</div>\n" +
+            "          <div class='pct-label'>Pass Rate</div>\n" +
+            "        </div>\n" +
+            "      </div>\n" +
+            "      <div class='chart-legend'>\n" +
+            "        <div class='legend-item'>\n" +
+            "          <span class='legend-dot' style='background:#00ff7f'></span>\n" +
+            "          Passed: <b style='color:#00ff7f'>" + passedTests + "</b>\n" +
+            "        </div>\n" +
+            "        <div class='legend-item'>\n" +
+            "          <span class='legend-dot' style='background:#ff4c4c'></span>\n" +
+            "          Failed: <b style='color:#ff4c4c'>" + failedTests + "</b>\n" +
+            "        </div>\n" +
+            "        <div class='legend-item'>\n" +
+            "          <span class='legend-dot' style='background:#00c8ff'></span>\n" +
+            "          Total: <b style='color:#00c8ff'>" + totalTests + "</b>\n" +
+            "        </div>\n" +
+            "      </div>\n" +
+            "    </div>\n" +
+            "\n" +
+            "    <!-- Overall Progress Bar -->\n" +
+            "    <div class='progress-section'>\n" +
+            "      <div class='progress-label'>Overall Pass / Fail Ratio</div>\n" +
+            "      <div class='progress-bar'>\n" +
+            "        <div class='progress-fill-pass' style='width:" + String.format("%.1f", passPercent) + "%'></div>\n" +
+            "        <div class='progress-fill-fail' style='width:" + String.format("%.1f", failPercent) + "%'></div>\n" +
+            "      </div>\n" +
+            "    </div>\n" +
+            "\n" +
+            "    <!-- Feature-wise Table -->\n" +
+            "    <h2 class='section-title'>Feature-wise Results</h2>\n" +
+            "    <table class='feature-table'>\n" +
+            "      <thead>\n" +
+            "        <tr>\n" +
+            "          <th>Feature</th>\n" +
+            "          <th>Passed</th>\n" +
+            "          <th>Failed</th>\n" +
+            "          <th>Total</th>\n" +
+            "          <th>Progress</th>\n" +
+            "          <th>Status</th>\n" +
+            "        </tr>\n" +
+            "      </thead>\n" +
+            "      <tbody>\n" +
+            "        " + featureRowsHtml + "\n" +
+            "      </tbody>\n" +
+            "    </table>\n" +
+            "\n" +
+            "    <!-- CTA Button -->\n" +
+            "    <div class='cta-section'>\n" +
+            "      <a href='details/ExtentReport.html' class='cta-btn'>\n" +
+            "        View Detailed Test Logs\n" +
+            "      </a>\n" +
+            "    </div>\n" +
+            "\n" +
+            "    <!-- Footer -->\n" +
+            "    <div class='footer'>\n" +
+            "      PathFinder UI Automation | Maersk Technology | Generated automatically\n" +
+            "    </div>\n" +
+            "\n" +
+            "  </div>\n" +
+            "\n" +
+            "</body>\n" +
+            "</html>";
 
-            "<div class='banner'><div class='dot'></div>" +
-            "<div><div class='banner-label'>" + overallStatus + "</div>" +
-            "<div class='banner-sub'>" + totalTests + " scenarios executed &bull; " + passedTests + " passed &bull; " + failedTests + " failed</div></div></div>" +
-
-            "<div class='cards'>" +
-            "<div class='card' style='border-top:3px solid #00c8ff'><div class='num' style='color:#00c8ff'>" + totalTests + "</div><div class='lbl'>Total Tests</div></div>" +
-            "<div class='card' style='border-top:3px solid #00c87a'><div class='num' style='color:#00c87a'>" + passedTests + "</div><div class='lbl'>Passed</div></div>" +
-            "<div class='card' style='border-top:3px solid #ff4c4c'><div class='num' style='color:#ff4c4c'>" + failedTests + "</div><div class='lbl'>Failed</div></div>" +
-            "<div class='card' style='border-top:3px solid #f0a500'><div class='num' style='color:#f0a500'>" + String.format("%.1f", passPercent) + "%</div><div class='lbl'>Pass Rate</div></div>" +
-            "</div>" +
-
-            "<div class='section'><div class='section-title'>Overall Pass / Fail</div>" +
-            "<div class='prog'>" +
-            "<div class='prog-p' style='width:" + String.format("%.1f", passPercent) + "%'>" + (passPercent > 8 ? String.format("%.1f", passPercent) + "%" : "") + "</div>" +
-            "<div class='prog-f' style='width:" + String.format("%.1f", failPercent) + "%'>" + (failPercent > 8 ? String.format("%.1f", failPercent) + "%" : "") + "</div>" +
-            "</div></div>" +
-
-            "<div class='section'><div class='section-title'>Feature-wise Results</div>" +
-            "<table><thead><tr><th>Feature</th><th>Passed</th><th>Failed</th><th>Total</th><th style='min-width:120px'>Progress</th><th>Status</th></tr></thead>" +
-            "<tbody>" + featureRows + "</tbody></table></div>" +
-
-            "<div class='btn-wrap'><a href='details/ExtentReport.html' class='btn'>View Detailed Test Logs &rarr;</a></div>" +
-
-            "<div class='footer'>Generated by PathFinder UI Automation &bull; GitHub Actions CI/CD</div>" +
-            "</body></html>";
-
-        try (PrintWriter pw = new PrintWriter(new FileWriter(runFolder + "/index.html"))) {
+        // Write index.html to run folder root
+        try (PrintWriter pw = new PrintWriter(
+                new FileWriter(runFolder + "/index.html"))) {
             pw.print(html);
-        } catch (IOException e) {
+            System.out.println("✅ Dashboard generated: " + runFolder + "/index.html");
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

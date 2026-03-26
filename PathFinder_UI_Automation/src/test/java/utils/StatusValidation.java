@@ -2,7 +2,9 @@ package utils;
 
 import static Pages.PathFinderLocators.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.openqa.selenium.WebDriver;
@@ -122,6 +124,18 @@ public class StatusValidation {
         );
     }
 
+    // Simple overload — scan all, last row decides (no extra params)
+    public void validateBookingStatusSimple(String expectedUiStatus) {
+
+        validateBookingStatus(
+                "N/A",
+                expectedUiStatus,
+                "N/A",
+                "N/A",
+                "N/A"
+        );
+    }
+
     // ============================================================
     // 🔹 DB TABLE ATTACHMENT
     // ============================================================
@@ -222,6 +236,140 @@ public class StatusValidation {
         if (hasRunning) return "RUNNING";
 
         throw new AssertionError("❌ Unable to determine final UI status!");
+    }
+
+    // ============================================================
+    // 🔹 SCAN ALL ROWS, LAST ROW DECIDES STATUS
+    //    Filters by platform_identifier if available
+    // ============================================================
+
+    public void validateBookingStatus(String platformName,
+                                      String expectedUiStatus,
+                                      String identifierValue,
+                                      String traceId,
+                                      String dbRawStatus) {
+
+        ExtentTest test = ExtentTestManager.getTest();
+
+        identifierValue = safeValue(identifierValue);
+        traceId = safeValue(traceId);
+        dbRawStatus = safeValue(dbRawStatus);
+
+        // Attach DB table
+        attachDbTable(platformName,
+                identifierValue,
+                traceId,
+                dbRawStatus,
+                expectedUiStatus);
+
+        // Attach JSON
+        attachDbJson(platformName,
+                identifierValue,
+                traceId,
+                dbRawStatus,
+                platformName);
+
+        // ── Step 1: Find all Platform Identifier cells to build row index ──
+        List<WebElement> pidCells =
+                ShadowDom.findAllDeep(driver, PLATFORM_ID_CELL_DEEP, logger);
+
+        List<WebElement> statusCells =
+                ShadowDom.findAllDeep(driver, STATUS_CELL_DEEP, logger);
+
+        if (statusCells == null || statusCells.isEmpty()) {
+            failTest("❌ No status cells found!", test);
+        }
+
+        // ── Step 2: Build a set of row indices matching our identifier ──
+        Set<Integer> matchingIndices = new HashSet<>();
+        boolean canFilter = pidCells != null && !pidCells.isEmpty()
+                && !identifierValue.equals("N/A");
+
+        if (canFilter) {
+            logger.info("🔍 Filtering rows by Platform Identifier: " + identifierValue);
+            for (int idx = 0; idx < pidCells.size(); idx++) {
+                try {
+                    String pidText = pidCells.get(idx).getText().trim();
+                    if (pidText.equals(identifierValue)) {
+                        matchingIndices.add(idx);
+                    }
+                } catch (Exception ignored) {}
+            }
+            logger.info("   ✅ Found " + matchingIndices.size()
+                    + " rows matching identifier " + identifierValue);
+        }
+
+        // ── Step 3: Scan rows — if filter available, only scan matching rows ──
+        String lastStatus = null;
+        int scannedCount = 0;
+
+        logger.info("🔍 Scanning status rows for " + platformName + "...");
+
+        for (int i = 0; i < statusCells.size(); i++) {
+
+            // If we can filter and this row doesn't match, skip it
+            if (canFilter && !matchingIndices.isEmpty() && !matchingIndices.contains(i)) {
+                continue;
+            }
+
+            try {
+
+                WebElement cell = statusCells.get(i);
+                ShadowDom.scrollIntoViewCenter(driver, cell);
+
+                String text = cell.getText().trim().toUpperCase();
+                if (text.isEmpty()) continue;
+
+                scannedCount++;
+                lastStatus = text;
+
+                logger.info("   ➡ Row " + (i + 1) + " status: " + text
+                        + (canFilter ? " [MATCHED]" : ""));
+
+            } catch (Exception ignored) {}
+        }
+
+        if (lastStatus == null) {
+            failTest("❌ No status found after scanning rows! "
+                    + (canFilter ? "(Filtered by: " + identifierValue + ")" : ""), test);
+        }
+
+        // ── Step 4: Normalize the last status ──
+        String finalUiStatus;
+
+        if (lastStatus.contains("ERROR") || lastStatus.contains("FAIL")) {
+            finalUiStatus = "ERROR";
+        } else if (lastStatus.contains("TERMINATED") || lastStatus.contains("CANCELLED")) {
+            finalUiStatus = "TERMINATED";
+        } else if (lastStatus.contains("SUCCESS") || lastStatus.contains("COMPLETED") || lastStatus.contains("CREATED")) {
+            finalUiStatus = "SUCCESS";
+        } else if (lastStatus.contains("RUNNING") || lastStatus.contains("IN_PROGRESS")) {
+            finalUiStatus = "RUNNING";
+        } else {
+            finalUiStatus = lastStatus;
+        }
+
+        logger.info("📊 Total rows scanned: " + scannedCount);
+        logger.info("✅ FINAL status (last row): " + finalUiStatus);
+        logger.info("📌 Expected status: " + expectedUiStatus);
+
+        if (!finalUiStatus.equalsIgnoreCase(expectedUiStatus)) {
+            failTest("❌ STATUS MISMATCH → Platform: "
+                    + platformName
+                    + " | Identifier: " + identifierValue
+                    + " | TraceId: " + traceId
+                    + " | DB Raw: " + dbRawStatus
+                    + " | Expected: " + expectedUiStatus
+                    + " | Actual (last row): " + finalUiStatus
+                    + " | Total rows scanned: " + scannedCount, test);
+        }
+
+        logger.info("✅ STATUS MATCHED: " + finalUiStatus + " == " + expectedUiStatus);
+
+        if (test != null)
+            test.pass("Status Matched (last row): " + finalUiStatus
+                    + " | Identifier: " + identifierValue
+                    + " | Rows scanned: " + scannedCount);
     }
 
     // ============================================================

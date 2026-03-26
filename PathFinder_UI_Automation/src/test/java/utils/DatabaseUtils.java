@@ -5,7 +5,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -34,21 +36,24 @@ public class DatabaseUtils {
 
         List<PlatformRecord> records = new ArrayList<>();
 
+        // Fetch more rows, then dedup by platform_identifier keeping latest (id DESC)
         String ampsQuery =
                 "SELECT platform_identifier, status, origin_system " +
                 "FROM path_finder_log " +
                 "WHERE platform_identifier IS NOT NULL " +
+                "AND TRIM(platform_identifier) != '' " +
                 "AND origin_system = 'AMPS' " +
-                "ORDER BY log_created_time DESC " +
-                "LIMIT 5";
+                "ORDER BY log_created_time DESC, id DESC " +
+                "LIMIT 20";
 
         String seeburgerQuery =
                 "SELECT platform_identifier, status, origin_system " +
                 "FROM path_finder_log " +
                 "WHERE platform_identifier IS NOT NULL " +
+                "AND TRIM(platform_identifier) != '' " +
                 "AND origin_system = 'SEEBURGER' " +
-                "ORDER BY log_created_time DESC " +
-                "LIMIT 5";
+                "ORDER BY log_created_time DESC, id DESC " +
+                "LIMIT 20";
 
         try (Connection con = getConnection(prop)) {
 
@@ -56,12 +61,25 @@ public class DatabaseUtils {
             try (PreparedStatement ampsStmt = con.prepareStatement(ampsQuery);
                  ResultSet ampsRs = ampsStmt.executeQuery()) {
 
+                List<PlatformRecord> ampsAll = new ArrayList<>();
                 while (ampsRs.next()) {
-                    records.add(new PlatformRecord(
+                    ampsAll.add(new PlatformRecord(
                             ampsRs.getString("platform_identifier"),
                             ampsRs.getString("status"),
                             ampsRs.getString("origin_system")
                     ));
+                }
+                // Dedup: keep only FIRST (latest) per platform_identifier
+                Map<String, PlatformRecord> ampsSeen = new LinkedHashMap<>();
+                for (PlatformRecord r : ampsAll) {
+                    if (!ampsSeen.containsKey(r.getPlatformId())) {
+                        ampsSeen.put(r.getPlatformId(), r);
+                    }
+                }
+                int count = 0;
+                for (PlatformRecord r : ampsSeen.values()) {
+                    if (count++ >= 5) break;
+                    records.add(r);
                 }
             }
 
@@ -69,17 +87,30 @@ public class DatabaseUtils {
             try (PreparedStatement seeStmt = con.prepareStatement(seeburgerQuery);
                  ResultSet seeRs = seeStmt.executeQuery()) {
 
+                List<PlatformRecord> seeAll = new ArrayList<>();
                 while (seeRs.next()) {
-                    records.add(new PlatformRecord(
+                    seeAll.add(new PlatformRecord(
                             seeRs.getString("platform_identifier"),
                             seeRs.getString("status"),
                             seeRs.getString("origin_system")
                     ));
                 }
+                // Dedup: keep only FIRST (latest) per platform_identifier
+                Map<String, PlatformRecord> seeSeen = new LinkedHashMap<>();
+                for (PlatformRecord r : seeAll) {
+                    if (!seeSeen.containsKey(r.getPlatformId())) {
+                        seeSeen.put(r.getPlatformId(), r);
+                    }
+                }
+                int count = 0;
+                for (PlatformRecord r : seeSeen.values()) {
+                    if (count++ >= 5) break;
+                    records.add(r);
+                }
             }
 
             System.out.println("====================================");
-            System.out.println("✅ Total Platform Records Fetched: " + records.size());
+            System.out.println("✅ Total Platform Records Fetched (deduped): " + records.size());
             System.out.println("====================================");
 
         } catch (Exception e) {
@@ -98,6 +129,7 @@ public class DatabaseUtils {
 
         List<PlatformRecord> records = new ArrayList<>();
 
+        // Fetch more rows, then dedup by identifier_value keeping latest (id DESC)
         String query =
                 "SELECT bi ->> 'value' AS identifier_value, " +
                 "       p.origin_system, " +
@@ -108,16 +140,19 @@ public class DatabaseUtils {
                 "CROSS JOIN LATERAL jsonb_array_elements(p.business_identifiers) AS bi " +
                 "WHERE p.origin_system = 'SEEBURGER' " +
                 "  AND bi ->> 'name' = 'HOUSE BILL OF LADING' " +
-                "ORDER BY p.log_created_time DESC " +
-                "LIMIT 5";   // 🔥 Only latest record
+                "  AND TRIM(bi ->> 'value') != '' " +
+                "  AND p.trace_id IS NOT NULL " +
+                "  AND TRIM(p.trace_id) != '' " +
+                "ORDER BY p.log_created_time DESC, p.id DESC " +
+                "LIMIT 20";
 
         try (Connection con = getConnection(prop);
              PreparedStatement pstmt = con.prepareStatement(query);
              ResultSet rs = pstmt.executeQuery()) {
 
+            List<PlatformRecord> allRows = new ArrayList<>();
             while (rs.next()) {
-
-                records.add(new PlatformRecord(
+                allRows.add(new PlatformRecord(
                         rs.getString("identifier_value"),
                         rs.getString("status"),
                         rs.getString("origin_system"),
@@ -125,8 +160,22 @@ public class DatabaseUtils {
                 ));
             }
 
+            // Dedup: keep only FIRST (latest) per identifier_value
+            Map<String, PlatformRecord> seen = new LinkedHashMap<>();
+            for (PlatformRecord r : allRows) {
+                if (!seen.containsKey(r.getPlatformId())) {
+                    seen.put(r.getPlatformId(), r);
+                }
+            }
+            int count = 0;
+            for (PlatformRecord r : seen.values()) {
+                if (count++ >= 5) break;
+                records.add(r);
+            }
+
             System.out.println("====================================");
-            System.out.println("✅ Latest SEEBURGER House Bill Record Fetched");
+            System.out.println("✅ SEEBURGER House Bill Records: " + allRows.size()
+                    + " rows → " + records.size() + " unique (deduped)");
             System.out.println("====================================");
 
         } catch (Exception e) {
@@ -145,6 +194,7 @@ public class DatabaseUtils {
 
         List<PlatformRecord> records = new ArrayList<>();
 
+        // Fetch more rows, then dedup by identifier_value keeping latest (id DESC)
         String query =
                 "SELECT bi ->> 'value' AS identifier_value, " +
                 "       p.origin_system, " +
@@ -155,16 +205,19 @@ public class DatabaseUtils {
                 "CROSS JOIN LATERAL jsonb_array_elements(p.business_identifiers) AS bi " +
                 "WHERE p.origin_system = 'AMPS' " +
                 "  AND UPPER(bi ->> 'name') = 'BOOKING NUMBER' " +
-                "ORDER BY p.log_created_time DESC " +
-                "LIMIT 5";
+                "  AND TRIM(bi ->> 'value') != '' " +
+                "  AND p.trace_id IS NOT NULL " +
+                "  AND TRIM(p.trace_id) != '' " +
+                "ORDER BY p.log_created_time DESC, p.id DESC " +
+                "LIMIT 20";
 
         try (Connection con = getConnection(prop);
              PreparedStatement pstmt = con.prepareStatement(query);
              ResultSet rs = pstmt.executeQuery()) {
 
+            List<PlatformRecord> allRows = new ArrayList<>();
             while (rs.next()) {
-
-                records.add(new PlatformRecord(
+                allRows.add(new PlatformRecord(
                         rs.getString("identifier_value"),
                         rs.getString("status"),
                         rs.getString("origin_system"),
@@ -172,8 +225,22 @@ public class DatabaseUtils {
                 ));
             }
 
+            // Dedup: keep only FIRST (latest) per identifier_value
+            Map<String, PlatformRecord> seen = new LinkedHashMap<>();
+            for (PlatformRecord r : allRows) {
+                if (!seen.containsKey(r.getPlatformId())) {
+                    seen.put(r.getPlatformId(), r);
+                }
+            }
+            int count = 0;
+            for (PlatformRecord r : seen.values()) {
+                if (count++ >= 5) break;
+                records.add(r);
+            }
+
             System.out.println("====================================");
-            System.out.println("✅ AMPS BOOKING NUMBER Records: " + records.size());
+            System.out.println("✅ AMPS BOOKING NUMBER Records: " + allRows.size()
+                    + " rows → " + records.size() + " unique (deduped)");
             System.out.println("====================================");
 
         } catch (Exception e) {
@@ -192,6 +259,9 @@ public class DatabaseUtils {
 
         List<AdvancedSearchRecord> records = new ArrayList<>();
 
+        // Fetch recent records ordered by log_created_time DESC, id DESC
+        // so the FIRST row per (trace_id, platform_identifier) is the LATEST status.
+        // This matches the UI "last row decides" pattern.
         String query =
                 "SELECT trace_id, platform_identifier, status, origin_system " +
                 "FROM path_finder_log " +
@@ -199,15 +269,16 @@ public class DatabaseUtils {
                 "AND TRIM(trace_id) != '' " +
                 "AND platform_identifier IS NOT NULL " +
                 "AND TRIM(platform_identifier) != '' " +
-                "ORDER BY log_created_time DESC " +
-                "LIMIT 5";
+                "ORDER BY log_created_time DESC, id DESC " +
+                "LIMIT 20";
 
         try (Connection con = getConnection(prop);
              PreparedStatement pstmt = con.prepareStatement(query);
              ResultSet rs = pstmt.executeQuery()) {
 
+            List<AdvancedSearchRecord> allRows = new ArrayList<>();
             while (rs.next()) {
-                records.add(new AdvancedSearchRecord(
+                allRows.add(new AdvancedSearchRecord(
                         rs.getString("trace_id"),
                         rs.getString("platform_identifier"),
                         rs.getString("status"),
@@ -215,8 +286,24 @@ public class DatabaseUtils {
                 ));
             }
 
+            // Deduplicate: keep only the FIRST (latest) row per (traceId + platformId)
+            Map<String, AdvancedSearchRecord> seen = new LinkedHashMap<>();
+            for (AdvancedSearchRecord r : allRows) {
+                String key = r.getTransactionId() + "|" + r.getPlatformId();
+                if (!seen.containsKey(key)) {
+                    seen.put(key, r);
+                }
+            }
+            records.addAll(seen.values());
+
+            // Keep only top 5 unique records
+            if (records.size() > 5) {
+                records = new ArrayList<>(records.subList(0, 5));
+            }
+
             logger.info("====================================");
-            logger.info("✅ Advanced Search Records Fetched: " + records.size());
+            logger.info("✅ Advanced Search Records Fetched: " + allRows.size()
+                    + " rows → " + records.size() + " unique (trace_id + platform_id)");
             records.forEach(r -> logger.info("  → " + r));
             logger.info("====================================");
 

@@ -25,6 +25,8 @@ public class BusinessIdentifierBookingPages {
     private static final Logger logger =
             Logger.getLogger(BusinessIdentifierBookingPages.class.getName());
 
+    private static final int MAX_RETRY = 2;
+
     public BusinessIdentifierBookingPages(WebDriver driver) {
         this.driver = driver;
     }
@@ -61,8 +63,6 @@ public class BusinessIdentifierBookingPages {
         ExpandDownArrows expander = new ExpandDownArrows(driver);
         StatusValidation statusValidation = new StatusValidation(driver);
 
-        String lastSearchedBooking = "";
-
         for (int i = 0; i < records.size(); i++) {
 
             PlatformRecord record = records.get(i);
@@ -86,31 +86,26 @@ public class BusinessIdentifierBookingPages {
             logger.info("   Expected UI Map : " + expectedStatus);
             logger.info("==================================================");
 
-            if (bookingValue.equals(lastSearchedBooking)) {
-
-                logger.info("⚠ Duplicate booking detected → Performing refresh flow");
-
+            // Always refresh before 2nd+ search to reset Shadow DOM state
+            if (i > 0) {
+                logger.info("🔄 Refreshing page before next search...");
                 driver.navigate().refresh();
                 Thread.sleep(4000);
 
                 logger.info("🔄 Re-clicking Trace Table tab after refresh...");
                 NavigationUtils.clickTraceTableTab(driver);
                 selectBookingFromDropdown();
-                enterBookingAndSearch(bookingValue);
-
-            } else {
-
-                enterBookingAndSearch(bookingValue);
             }
 
-            lastSearchedBooking = bookingValue;
+            // Enter booking and search — with "No matching records" retry
+            enterBookingAndSearchWithRetry(bookingValue);
 
             logger.info("📌 [" + (i + 1) + "] Expanding rows (AMPS)...");
             expander.expandFirstRowThenAmps();
             logger.info("✅ Rows expanded");
 
-            logger.info("📌 [" + (i + 1) + "] Validating AMPS status...");
-            statusValidation.validatePlatformStatus(
+            logger.info("📌 [" + (i + 1) + "] Validating AMPS status (scan all, last row decides)...");
+            statusValidation.validateBookingStatus(
                     "AMPS",
                     expectedStatus,
                     bookingValue,
@@ -169,6 +164,69 @@ public class BusinessIdentifierBookingPages {
     }
 
     // ============================================================
+    // ENTER BOOKING + SEARCH WITH RETRY ON "NO MATCHING RECORDS"
+    // ============================================================
+
+    private void enterBookingAndSearchWithRetry(String bookingValue) throws InterruptedException {
+
+        for (int attempt = 1; attempt <= MAX_RETRY; attempt++) {
+
+            logger.info("🔍 Search attempt " + attempt + " for: " + bookingValue);
+            enterBookingAndSearch(bookingValue);
+
+            // Check if "No matching records found" is displayed
+            if (isNoMatchingRecordsFound()) {
+
+                logger.info("⚠ 'No matching records found' detected on attempt " + attempt);
+
+                if (attempt < MAX_RETRY) {
+                    logger.info("🔄 Refreshing and retrying...");
+                    driver.navigate().refresh();
+                    Thread.sleep(4000);
+
+                    NavigationUtils.clickTraceTableTab(driver);
+                    selectBookingFromDropdown();
+                } else {
+                    throw new RuntimeException(
+                            "❌ No matching records found in UI for Booking: " + bookingValue
+                            + " after " + MAX_RETRY + " attempts");
+                }
+
+            } else {
+                logger.info("✅ Search results found for: " + bookingValue);
+                return;
+            }
+        }
+    }
+
+    // ============================================================
+    // DETECT "NO MATCHING RECORDS FOUND" SCREEN
+    // ============================================================
+
+    private boolean isNoMatchingRecordsFound() {
+
+        try {
+            String pageSource = driver.getPageSource();
+            if (pageSource != null && pageSource.contains("No matching records found")) {
+                return true;
+            }
+
+            // Also check via Shadow DOM text content
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            String bodyText = (String) js.executeScript(
+                    "return document.body.innerText || document.body.textContent || '';");
+
+            if (bodyText != null && bodyText.contains("No matching records found")) {
+                return true;
+            }
+        } catch (Exception e) {
+            logger.warning("⚠ Could not check for 'No matching records' text: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    // ============================================================
     // ENTER BOOKING + CLICK SEARCH
     // ============================================================
 
@@ -204,17 +262,5 @@ public class BusinessIdentifierBookingPages {
 
         logger.info("⏳ Waiting for search results to load...");
         Thread.sleep(5000);
-
-        logger.info("⏳ Waiting for expand arrows to appear...");
-        new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(20))
-                .until(d -> {
-                    List<WebElement> arrows =
-                            ShadowDom.findAllDeep(driver,
-                                    ANY_EXPAND_BUTTON_DEEP,
-                                    logger);
-                    return arrows != null && !arrows.isEmpty();
-                });
-
-        logger.info("✅ Search results loaded and table ready for expansion");
     }
 }

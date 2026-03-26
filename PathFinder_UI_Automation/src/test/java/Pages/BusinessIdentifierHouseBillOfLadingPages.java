@@ -11,6 +11,7 @@ import org.openqa.selenium.*;
 import utils.DatabaseUtils;
 import utils.ExpandDownArrows;
 import utils.InputClearFeild;
+import utils.NavigationUtils;
 import utils.PlatformRecord;
 import utils.ShadowDom;
 import utils.StatusMapper;
@@ -34,37 +35,7 @@ public class BusinessIdentifierHouseBillOfLadingPages {
         logger.info("🚀 HOUSE BILL OF LADING VALIDATION STARTED");
         logger.info("==================================================");
 
-        // ------------------------------------------------------------
-        // OPEN BUSINESS IDENTIFIER DROPDOWN
-        // ------------------------------------------------------------
-
-        logger.info("📌 Opening Business Identifier dropdown...");
-        WebElement dropdown =
-                WaitUtils.waitForElementClickable(driver, MC_SELECT_DROPDOWN, 30, logger);
-        dropdown.click();
-        Thread.sleep(1500);
-        logger.info("✅ Dropdown opened");
-
-        // ------------------------------------------------------------
-        // SELECT HOUSE BILL OF LADING
-        // ------------------------------------------------------------
-
-        logger.info("📌 Selecting 'HOUSE BILL OF LADING' option...");
-        List<WebElement> options =
-                ShadowDom.findAllDeep(driver, DROPDOWN_OPTION_DEEP, logger);
-
-        for (WebElement option : options) {
-            if (option.getText().trim()
-                    .equalsIgnoreCase("HOUSE BILL OF LADING")) {
-
-                ShadowDom.scrollIntoViewCenter(driver, option);
-                ShadowDom.jsClick(driver, option);
-                logger.info("✅ 'HOUSE BILL OF LADING' selected");
-                break;
-            }
-        }
-
-        Thread.sleep(2000);
+        selectHouseBillFromDropdown();
 
         // ------------------------------------------------------------
         // FETCH LATEST 5 FROM DB
@@ -107,72 +78,20 @@ public class BusinessIdentifierHouseBillOfLadingPages {
             logger.info("==================================================");
 
             // --------------------------------------------------------
-            // ENTER BUSINESS IDENTIFIER VALUE
+            // REFRESH before 2nd+ search to reset Shadow DOM state
             // --------------------------------------------------------
 
-            logger.info("📌 [" + (i + 1) + "] Entering Business Identifier value...");
+            if (i > 0) {
+                logger.info("🔄 Refreshing page before next search...");
+                driver.navigate().refresh();
+                Thread.sleep(4000);
 
-            WaitUtils.waitForElementVisible(driver, INLINE_INPUT_FIELDS, 30, logger);
-            List<WebElement> allInputs = driver.findElements(INLINE_INPUT_FIELDS);
+                logger.info("🔄 Re-clicking Trace Table tab after refresh...");
+                NavigationUtils.clickTraceTableTab(driver);
+                selectHouseBillFromDropdown();
+            }
 
-            WebElement biHost = allInputs.get(0);
-            SearchContext biShadow = biHost.getShadowRoot();
-            WebElement biInput = biShadow.findElement(SHADOW_INPUT);
-
-            InputClearFeild.safeClearAndFocus(driver, biInput);
-            biInput.sendKeys(houseBillValue);
-            biInput.sendKeys(Keys.TAB);
-
-            logger.info("✅ Business Identifier entered: " + houseBillValue);
-            Thread.sleep(1000);
-
-            // --------------------------------------------------------
-            // ENTER TRANSACTION IDENTIFIER
-            // --------------------------------------------------------
-
-            logger.info("📌 [" + (i + 1) + "] Entering Transaction Identifier...");
-
-            WebElement txnHost = allInputs.get(1);
-            SearchContext txnShadow = txnHost.getShadowRoot();
-            WebElement txnInput = txnShadow.findElement(SHADOW_INPUT);
-
-            InputClearFeild.safeClearAndFocus(driver, txnInput);
-            txnInput.sendKeys(transactionId);
-            txnInput.sendKeys(Keys.TAB);
-
-            logger.info("✅ Transaction Identifier entered: " + transactionId);
-            Thread.sleep(1000);
-
-            // --------------------------------------------------------
-            // CLICK SEARCH
-            // --------------------------------------------------------
-
-            logger.info("📌 [" + (i + 1) + "] Clicking Search button...");
-
-            WebElement searchBtn =
-                    ShadowDom.waitForInnerClickable(
-                            driver,
-                            SEARCH_BTN_HOST,
-                            SEARCH_BTN,
-                            20,
-                            logger);
-
-            ShadowDom.jsClick(driver, searchBtn);
-            logger.info("✅ Search button clicked");
-
-            logger.info("⏳ [" + (i + 1) + "] Waiting for search results to load...");
-            Thread.sleep(5000);
-
-            logger.info("⏳ [" + (i + 1) + "] Waiting for expand arrows to appear...");
-            new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(30))
-                    .until(d -> {
-                        List<WebElement> arrows =
-                                ShadowDom.findAllDeep(driver,
-                                        ANY_EXPAND_BUTTON_DEEP,
-                                        logger);
-                        return arrows != null && !arrows.isEmpty();
-                    });
-            logger.info("✅ Search results loaded and table ready for expansion");
+            enterHouseBillAndSearch(houseBillValue, transactionId, i + 1);
 
             // --------------------------------------------------------
             // EXPAND (EXISTING WORKING LOGIC)
@@ -186,8 +105,8 @@ public class BusinessIdentifierHouseBillOfLadingPages {
             // VALIDATE (EXISTING WORKING LOGIC)
             // --------------------------------------------------------
 
-            logger.info("📌 [" + (i + 1) + "] Validating status...");
-            statusValidation.validateStatusWithLogging(
+            logger.info("📌 [" + (i + 1) + "] Validating SEEBURGER status (scan all, last row decides)...");
+            statusValidation.validateBookingStatus(
                     "SEEBURGER",
                     expectedStatus,
                     houseBillValue,
@@ -205,5 +124,104 @@ public class BusinessIdentifierHouseBillOfLadingPages {
         logger.info("🎉 HOUSE BILL OF LADING VALIDATION COMPLETED");
         logger.info("   Total Records Validated: " + records.size());
         logger.info("==================================================");
+    }
+
+    // ============================================================
+    // SELECT HOUSE BILL OF LADING FROM DROPDOWN
+    // ============================================================
+
+    private void selectHouseBillFromDropdown() throws InterruptedException {
+
+        logger.info("📌 Opening Business Identifier dropdown...");
+        WebElement dropdown =
+                WaitUtils.waitForElementClickable(driver, MC_SELECT_DROPDOWN, 30, logger);
+        dropdown.click();
+        Thread.sleep(1500);
+        logger.info("✅ Dropdown opened");
+
+        logger.info("📌 Selecting 'HOUSE BILL OF LADING' option...");
+        List<WebElement> options =
+                ShadowDom.findAllDeep(driver, DROPDOWN_OPTION_DEEP, logger);
+
+        for (WebElement option : options) {
+            if (option.getText().trim()
+                    .equalsIgnoreCase("HOUSE BILL OF LADING")) {
+
+                ShadowDom.scrollIntoViewCenter(driver, option);
+                ShadowDom.jsClick(driver, option);
+                logger.info("✅ 'HOUSE BILL OF LADING' selected");
+                break;
+            }
+        }
+
+        Thread.sleep(2000);
+        logger.info("✅ HOUSE BILL OF LADING selection completed");
+    }
+
+    // ============================================================
+    // ENTER HOUSE BILL + TRANSACTION ID + CLICK SEARCH
+    // ============================================================
+
+    private void enterHouseBillAndSearch(String houseBillValue, String transactionId, int recordNum)
+            throws InterruptedException {
+
+        logger.info("📌 [" + recordNum + "] Entering Business Identifier value...");
+
+        WaitUtils.waitForElementVisible(driver, INLINE_INPUT_FIELDS, 30, logger);
+        List<WebElement> allInputs = driver.findElements(INLINE_INPUT_FIELDS);
+
+        // Field 1: Business Identifier Value
+        WebElement biHost = allInputs.get(0);
+        SearchContext biShadow = biHost.getShadowRoot();
+        WebElement biInput = biShadow.findElement(SHADOW_INPUT);
+
+        InputClearFeild.safeClearAndFocus(driver, biInput);
+        biInput.sendKeys(houseBillValue);
+        biInput.sendKeys(Keys.TAB);
+
+        logger.info("✅ Business Identifier entered: " + houseBillValue);
+        Thread.sleep(1000);
+
+        // Field 2: Transaction Identifier
+        logger.info("📌 [" + recordNum + "] Entering Transaction Identifier...");
+
+        WebElement txnHost = allInputs.get(1);
+        SearchContext txnShadow = txnHost.getShadowRoot();
+        WebElement txnInput = txnShadow.findElement(SHADOW_INPUT);
+
+        InputClearFeild.safeClearAndFocus(driver, txnInput);
+        txnInput.sendKeys(transactionId);
+        txnInput.sendKeys(Keys.TAB);
+
+        logger.info("✅ Transaction Identifier entered: " + transactionId);
+        Thread.sleep(1000);
+
+        // Click Search
+        logger.info("📌 [" + recordNum + "] Clicking Search button...");
+
+        WebElement searchBtn =
+                ShadowDom.waitForInnerClickable(
+                        driver,
+                        SEARCH_BTN_HOST,
+                        SEARCH_BTN,
+                        20,
+                        logger);
+
+        ShadowDom.jsClick(driver, searchBtn);
+        logger.info("✅ Search button clicked");
+
+        logger.info("⏳ [" + recordNum + "] Waiting for search results to load...");
+        Thread.sleep(5000);
+
+        logger.info("⏳ [" + recordNum + "] Waiting for expand arrows to appear...");
+        new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(30))
+                .until(d -> {
+                    List<WebElement> arrows =
+                            ShadowDom.findAllDeep(driver,
+                                    ANY_EXPAND_BUTTON_DEEP,
+                                    logger);
+                    return arrows != null && !arrows.isEmpty();
+                });
+        logger.info("✅ Search results loaded and table ready for expansion");
     }
 }

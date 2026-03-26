@@ -30,6 +30,10 @@ public final class PathFinderLocators {
     public static final String STATUS_CELL_DEEP =
             "td[data-header-id='status']";
 
+    // Deep search for platform identifier cells (to filter rows by identifier)
+    public static final String PLATFORM_ID_CELL_DEEP =
+            "td[data-header-id='platformIdentifier']";
+
     // Fallback badge selectors for status
     public static final String GENERIC_BADGE_DEEP =
             "span.trace-badge, .trace-badge, .badge";

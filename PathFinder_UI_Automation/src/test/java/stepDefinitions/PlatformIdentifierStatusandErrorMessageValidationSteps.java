@@ -81,8 +81,10 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
             platformPage.waitForExpandArrowsAfterSearch();
             Thread.sleep(2000);
 
-            // Collect unique systems + expected status
+            // Collect unique systems + expected status + DB details
             Map<String, String> expectedStatuses = new HashMap<>();
+            Map<String, String> dbRawStatuses = new HashMap<>();
+            Map<String, String> traceIds = new HashMap<>();
 
             for (PlatformRecord record : platformRecords) {
 
@@ -93,6 +95,8 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
                         StatusMapper.mapDbToUiStatus(dbStatus, originSystem);
 
                 expectedStatuses.put(originSystem, normalizedDbStatus);
+                dbRawStatuses.put(originSystem, dbStatus);
+                traceIds.put(originSystem, record.getTraceId());
 
                 logger.info("🗄 DB Record -> " + originSystem +
                         " | Raw DB Status: " + dbStatus +
@@ -119,7 +123,10 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
                 logger.info("🟣 Starting SEEBURGER validation...");
 
                 platformPage.expandAndValidateSeeburger(
-                        expectedStatuses.get("SEEBURGER"));
+                        expectedStatuses.get("SEEBURGER"),
+                        platformId,
+                        traceIds.getOrDefault("SEEBURGER", "N/A"),
+                        dbRawStatuses.getOrDefault("SEEBURGER", "N/A"));
 
                 logger.info("🟣 SEEBURGER validation completed.");
             }
@@ -136,7 +143,10 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
                     logger.info("🔵 Starting AMPS validation...");
 
                     platformPage.expandAndValidateAmps(
-                            expectedStatuses.get("AMPS"));
+                            expectedStatuses.get("AMPS"),
+                            platformId,
+                            traceIds.getOrDefault("AMPS", "N/A"),
+                            dbRawStatuses.getOrDefault("AMPS", "N/A"));
 
                     logger.info("🔵 AMPS validation completed.");
 
@@ -151,7 +161,10 @@ public class PlatformIdentifierStatusandErrorMessageValidationSteps {
                     logger.info("🟣 Starting SEEBURGER validation...");
 
                     platformPage.expandAndValidateSeeburger(
-                            expectedStatuses.get("SEEBURGER"));
+                            expectedStatuses.get("SEEBURGER"),
+                            platformId,
+                            traceIds.getOrDefault("SEEBURGER", "N/A"),
+                            dbRawStatuses.getOrDefault("SEEBURGER", "N/A"));
 
                     logger.info("🟣 SEEBURGER validation completed.");
                 }
